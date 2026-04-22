@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>石垣島運転代行 スタッフ</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #0f172a;
@@ -343,7 +342,6 @@ const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 // ================================================
 // 状態管理
 // ================================================
-let supabase = null;
 let selectedCar  = 'A';
 let selectedFare = 'general';
 let isTracking   = false;
@@ -353,15 +351,6 @@ let lastPos      = null;
 let sendTimer    = null;
 let currentLat   = null;
 let currentLng   = null;
-
-// ================================================
-// Supabase初期化
-// ================================================
-if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-  try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  } catch(e) { console.warn('Supabase init failed', e); }
-}
 
 // ================================================
 // 料金計算
@@ -438,7 +427,7 @@ function notifyDepart() {
   const msg = `【出発】車${selectedCar} ${time}\nお客様：${name}\n出発：${dep}\n目的地：${dest}\n料金区分：${fareType}`;
   window.open(`https://line.me/R/msg/text/${encodeURIComponent(msg)}`, '_blank');
 
-  if (supabase) pushStatus('departing');
+  pushStatus('departing');
 }
 
 // ================================================
@@ -472,12 +461,10 @@ function startDriving() {
     timeout: 15000
   });
 
-  if (supabase) {
-    pushStatus('driving');
-    sendTimer = setInterval(() => {
-      if (currentLat) pushLocation(currentLat, currentLng);
-    }, 5000);
-  }
+  pushStatus('driving');
+  sendTimer = setInterval(() => {
+    if (currentLat) pushLocation(currentLat, currentLng);
+  }, 5000);
 }
 
 // ================================================
@@ -506,7 +493,7 @@ function stopDriving() {
 
   showResult();
 
-  if (supabase) pushStatus('waiting');
+  pushStatus('waiting');
 }
 
 // ================================================
@@ -608,38 +595,47 @@ function onGpsError(err) {
 }
 
 // ================================================
-// Supabase送信
+// Supabase送信（plain fetch）
 // ================================================
-async function pushLocation(lat, lng) {
-  if (!supabase) return;
+async function supabaseFetch(data) {
   try {
-    await supabase.from('vehicles').upsert({
-      id: `car_${selectedCar.toLowerCase()}`,
-      vehicle_name: `車${selectedCar}`,
-      lat, lng,
-      status: 'driving',
-      distance: totalDist,
-      fare: calcFare(totalDist),
-      customer_name: document.getElementById('customer-name').value,
-      departure:     document.getElementById('departure').value,
-      destination:   document.getElementById('destination').value,
-      updated_at: new Date().toISOString()
+    await fetch(SUPABASE_URL + '/rest/v1/vehicles', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(data)
     });
   } catch(e) {}
 }
 
+async function pushLocation(lat, lng) {
+  await supabaseFetch({
+    id: 'car_' + selectedCar.toLowerCase(),
+    vehicle_name: '車' + selectedCar,
+    lat, lng,
+    status: 'driving',
+    distance: totalDist,
+    fare: calcFare(totalDist),
+    customer_name: document.getElementById('customer-name').value,
+    departure:     document.getElementById('departure').value,
+    destination:   document.getElementById('destination').value,
+    updated_at: new Date().toISOString()
+  });
+}
+
 async function pushStatus(status) {
-  if (!supabase) return;
-  try {
-    await supabase.from('vehicles').upsert({
-      id: `car_${selectedCar.toLowerCase()}`,
-      vehicle_name: `車${selectedCar}`,
-      status,
-      distance: totalDist,
-      fare: calcFare(totalDist),
-      updated_at: new Date().toISOString()
-    });
-  } catch(e) {}
+  await supabaseFetch({
+    id: 'car_' + selectedCar.toLowerCase(),
+    vehicle_name: '車' + selectedCar,
+    status,
+    distance: totalDist,
+    fare: calcFare(totalDist),
+    updated_at: new Date().toISOString()
+  });
 }
 </script>
 </body>
