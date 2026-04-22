@@ -183,7 +183,10 @@
       cursor: pointer;
       letter-spacing: 2px;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
       transition: transform 0.1s, opacity 0.1s;
+      -webkit-appearance: none;
+      appearance: none;
     }
     .btn:active { transform: scale(0.97); opacity: 0.9; }
     .btn:disabled { opacity: 0.35; pointer-events: none; }
@@ -260,21 +263,21 @@
 <div class="section" id="setup-section">
   <div class="section-title">車両選択</div>
   <div class="radio-group" style="margin-bottom:14px">
-    <div class="radio-btn active" id="btn-car-a" onclick="selectCar('A')">
+    <div class="radio-btn active" id="btn-car-a">
       🚗 車A
     </div>
-    <div class="radio-btn" id="btn-car-b" onclick="selectCar('B')">
+    <div class="radio-btn" id="btn-car-b">
       🚗 車B
     </div>
   </div>
 
   <div class="section-title">料金タイプ</div>
   <div class="radio-group">
-    <div class="radio-btn active" id="btn-fare-general" onclick="selectFare('general')">
+    <div class="radio-btn active" id="btn-fare-general">
       一般
       <small>観光客向け</small>
     </div>
-    <div class="radio-btn" id="btn-fare-local" onclick="selectFare('local')">
+    <div class="radio-btn" id="btn-fare-local">
       地元割
       <small>地元割引</small>
     </div>
@@ -318,17 +321,17 @@
 </div>
 
 <!-- メインボタン -->
-<button class="btn btn-depart" id="btn-depart" onclick="notifyDepart()">📍 出発を社長に報告</button>
-<button class="btn btn-start" id="btn-start" onclick="startDriving()">▶ 計測スタート</button>
-<button class="btn btn-stop hidden" id="btn-stop" onclick="stopDriving()">■ 到着・計測ストップ</button>
+<button class="btn btn-depart" id="btn-depart">📍 出発を社長に報告</button>
+<button class="btn btn-start" id="btn-start">▶ 計測スタート</button>
+<button class="btn btn-stop hidden" id="btn-stop">■ 到着・計測ストップ</button>
 
 <!-- 到着後の表示 -->
 <div class="section hidden" id="result-section">
   <div class="section-title">走行結果</div>
   <div class="result-card" id="result-card"></div>
 </div>
-<button class="btn btn-line hidden" id="btn-line" onclick="sendLineReport()">📱 LINEで到着報告</button>
-<button class="btn btn-start hidden" id="btn-reset" onclick="resetAll()" style="background:#475569; font-size:15px; padding:16px; letter-spacing:0">
+<button class="btn btn-line hidden" id="btn-line">📱 LINEで到着報告</button>
+<button class="btn btn-start hidden" id="btn-reset" style="background:#475569; font-size:15px; padding:16px; letter-spacing:0">
   次のお客様へリセット
 </button>
 
@@ -637,6 +640,21 @@ async function pushStatus(status) {
     updated_at: new Date().toISOString()
   });
 }
+
+// ================================================
+// イベントリスナー（onclick属性より確実）
+// ================================================
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('btn-car-a').addEventListener('click', function() { selectCar('A'); });
+  document.getElementById('btn-car-b').addEventListener('click', function() { selectCar('B'); });
+  document.getElementById('btn-fare-general').addEventListener('click', function() { selectFare('general'); });
+  document.getElementById('btn-fare-local').addEventListener('click', function() { selectFare('local'); });
+  document.getElementById('btn-depart').addEventListener('click', notifyDepart);
+  document.getElementById('btn-start').addEventListener('click', startDriving);
+  document.getElementById('btn-stop').addEventListener('click', stopDriving);
+  document.getElementById('btn-line').addEventListener('click', sendLineReport);
+  document.getElementById('btn-reset').addEventListener('click', resetAll);
+});
 </script>
 </body>
 </html>
