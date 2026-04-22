@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>石垣島運転代行 管理画面</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --line: #06c755;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--card);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--accent);
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 16px; font-weight: 700; }
+    .conn-badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .conn-ok  { background: rgba(34,197,94,0.2);  color: var(--green); }
+    .conn-err { background: rgba(239,68,68,0.2);   color: var(--red); }
+    .conn-off { background: rgba(148,163,184,0.15); color: var(--muted); }
+
+    /* マップ */
+    #map {
+      flex: 1;
+      min-height: 0;
+      z-index: 0;
+    }
+
+    /* 車両パネル */
+    .vehicle-panels {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .vehicle-card {
+      flex: 1;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 10px 12px;
+      border: 2px solid var(--border);
+      transition: border-color 0.3s;
+    }
+    .vehicle-card.driving { border-color: var(--green); }
+    .vehicle-card.departing { border-color: var(--yellow); }
+
+    .vc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .vc-name { font-size: 15px; font-weight: 800; }
+    .vc-status {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    .st-waiting   { background: rgba(148,163,184,0.2); color: var(--muted); }
+    .st-driving   { background: rgba(34,197,94,0.2);   color: var(--green); }
+    .st-departing { background: rgba(245,158,11,0.2);  color: var(--yellow); }
+
+    .vc-info { font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .vc-info span { color: var(--text); font-weight: 600; }
+
+    .vc-metrics {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .vc-metric {
+      flex: 1;
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+    .vc-metric .val { font-size: 18px; font-weight: 800; }
+    .vc-metric .lbl { font-size: 10px; color: var(--muted); }
+
+    .btn-line {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      background: var(--line);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-line:active { opacity: 0.8; }
+    .btn-line:disabled { opacity: 0.35; }
+
+    .updated { font-size: 10px; color: var(--muted); text-align: right; margin-top: 4px; }
+
+    /* Leafletカスタムアイコン */
+    .car-marker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .car-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .car-icon.car-a { background: #3b82f6; }
+    .car-icon.car-b { background: #a855f7; }
+    .car-icon.waiting { opacity: 0.5; }
+    .car-label {
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🗺 石垣島運転代行 管理画面</h1>
+  <span class="conn-badge conn-off" id="conn-badge">未接続</span>
+</header>
+
+<div id="map"></div>
+
+<div class="vehicle-panels">
+  <!-- 車A -->
+  <div class="vehicle-card" id="card-a">
+    <div class="vc-header">
+      <div class="vc-name" style="color:#3b82f6">🚗 車A</div>
+      <div class="vc-status st-waiting" id="status-a">待機中</div>
+    </div>
+    <div class="vc-metrics">
+      <div class="vc-metric">
+        <div class="val" id="dist-a">—</div>
+        <div class="lbl">km</div>
+      </div>
+      <div class="vc-metric">
+        <div class="val" id="fare-a">—</div>
+        <div class="lbl">円</div>
+      </div>
+    </div>
+    <div class="vc-info" id="info-a">お客様：—<br>目的地：—</div>
+    <div class="updated" id="updated-a"></div>
+    <button class="btn-line" style="margin-top:8px" onclick="sendLine('A')" id="line-btn-a">
+      📱 車Aにテンプレ配車
+    </button>
+  </div>
+
+  <!-- 車B -->
+  <div class="vehicle-card" id="card-b">
+    <div class="vc-header">
+      <div class="vc-name" style="color:#a855f7">🚗 車B</div>
+      <div class="vc-status st-waiting" id="status-b">待機中</div>
+    </div>
+    <div class="vc-metrics">
+      <div class="vc-metric">
+        <div class="val" id="dist-b">—</div>
+        <div class="lbl">km</div>
+      </div>
+      <div class="vc-metric">
+        <div class="val" id="fare-b">—</div>
+        <div class="lbl">円</div>
+      </div>
+    </div>
+    <div class="vc-info" id="info-b">お客様：—<br>目的地：—</div>
+    <div class="updated" id="updated-b"></div>
+    <button class="btn-line" style="margin-top:8px" onclick="sendLine('B')" id="line-btn-b">
+      📱 車Bにテンプレ配車
+    </button>
+  </div>
+</div>
+
+<script>
+// ================================================
+// ★ Supabase設定（staff_gps_app.htmlと同じ値を入力）
+// ================================================
+const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
+
+// ================================================
+// 石垣島の中心座標
+// ================================================
+const ISHIGAKI_CENTER = [24.3336, 124.1543];
+
+// ================================================
+// マップ初期化
+// ================================================
+const map = L.map('map', {
+  center: ISHIGAKI_CENTER,
+  zoom: 12,
+  zoomControl: true
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 19
+}).addTo(map);
+
+// ================================================
+// 車両マーカー
+// ================================================
+function makeIcon(car, status) {
+  const color = car === 'A' ? '#3b82f6' : '#a855f7';
+  const opacity = status === 'waiting' ? '0.5' : '1';
+  const label = status === 'driving' ? '走行中' : status === 'departing' ? '出発' : '待機';
+  return L.divIcon({
+    className: '',
+    html: `<div style="display:flex;flex-direction:column;align-items:center">
+      <div style="width:40px;height:40px;border-radius:50%;background:${color};opacity:${opacity};
+        display:flex;align-items:center;justify-content:center;font-size:20px;
+        border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5)">🚗</div>
+      <div style="background:rgba(0,0,0,0.75);color:#fff;font-size:11px;font-weight:700;
+        padding:2px 6px;border-radius:4px;margin-top:2px;white-space:nowrap">
+        車${car}・${label}</div>
+    </div>`,
+    iconSize: [60, 60],
+    iconAnchor: [30, 20]
+  });
+}
+
+const markers = {
+  A: L.marker(ISHIGAKI_CENTER, { icon: makeIcon('A', 'waiting') }).addTo(map),
+  B: L.marker([24.3400, 124.1600], { icon: makeIcon('B', 'waiting') }).addTo(map)
+};
+
+// ================================================
+// 車両データ
+// ================================================
+const vehicles = { A: {}, B: {} };
+
+function getKey(id) {
+  if (id === 'car_a') return 'A';
+  if (id === 'car_b') return 'B';
+  return null;
+}
+
+// ================================================
+// UI更新
+// ================================================
+function updateCard(key, data) {
+  vehicles[key] = data;
+
+  const status   = data.status || 'waiting';
+  const dist     = data.distance != null ? parseFloat(data.distance).toFixed(2) : '—';
+  const fare     = data.fare     != null ? parseInt(data.fare).toLocaleString()  : '—';
+  const customer = data.customer_name || '—';
+  const dest     = data.destination   || '—';
+  const updatedAt = data.updated_at
+    ? new Date(data.updated_at).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit', second:'2-digit'})
+    : '';
+
+  const stMap = {
+    waiting:   ['待機中',   'st-waiting'],
+    departing: ['出発',     'st-departing'],
+    driving:   ['走行中',   'st-driving']
+  };
+  const [stLabel, stClass] = stMap[status] || ['不明', 'st-waiting'];
+
+  const lk = key.toLowerCase();
+  document.getElementById(`status-${lk}`).textContent  = stLabel;
+  document.getElementById(`status-${lk}`).className    = `vc-status ${stClass}`;
+  document.getElementById(`dist-${lk}`).textContent    = dist;
+  document.getElementById(`fare-${lk}`).textContent    = fare;
+  document.getElementById(`info-${lk}`).innerHTML      =
+    `お客様：<span>${customer}</span><br>目的地：<span>${dest}</span>`;
+  document.getElementById(`updated-${lk}`).textContent = updatedAt ? `更新 ${updatedAt}` : '';
+
+  const card = document.getElementById(`card-${lk}`);
+  card.classList.remove('driving', 'departing');
+  if (status === 'driving')   card.classList.add('driving');
+  if (status === 'departing') card.classList.add('departing');
+
+  // マーカー更新
+  if (data.lat && data.lng) {
+    markers[key].setLatLng([data.lat, data.lng]);
+    markers[key].setIcon(makeIcon(key, status));
+  } else {
+    markers[key].setIcon(makeIcon(key, status));
+  }
+}
+
+// ================================================
+// LINE配車テンプレ
+// ================================================
+function sendLine(car) {
+  const time = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
+  const msg  = `【配車依頼】車${car}\n次のお客様の対応をお願いします。\n場所：\n時刻：${time}`;
+  window.open(`https://line.me/R/msg/text/${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ================================================
+// Supabase接続・リアルタイム
+// ================================================
+if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+  document.getElementById('conn-badge').textContent = 'Supabase未設定';
+  document.getElementById('conn-badge').className   = 'conn-badge conn-err';
+} else {
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // 初回データ取得
+  (async () => {
+    try {
+      const { data, error } = await sb.from('vehicles').select('*');
+      if (error) throw error;
+      data.forEach(row => {
+        const key = getKey(row.id);
+        if (key) updateCard(key, row);
+      });
+      document.getElementById('conn-badge').textContent = '接続中 🟢';
+      document.getElementById('conn-badge').className   = 'conn-badge conn-ok';
+    } catch(e) {
+      document.getElementById('conn-badge').textContent = '接続エラー';
+      document.getElementById('conn-badge').className   = 'conn-badge conn-err';
+    }
+  })();
+
+  // リアルタイム購読
+  sb.channel('vehicles-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'vehicles'
+    }, payload => {
+      const row = payload.new;
+      const key = getKey(row.id);
+      if (key) updateCard(key, row);
+    })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        document.getElementById('conn-badge').textContent = 'リアルタイム 🟢';
+        document.getElementById('conn-badge').className   = 'conn-badge conn-ok';
+      }
+    });
+}
+</script>
+</body>
+</html>
