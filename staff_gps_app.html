@@ -262,6 +262,23 @@
     .summary-row .sr-val   { font-weight: 700; font-size: 18px; }
     .summary-row.total .sr-val { font-size: 24px; }
     .summary-row.commission .sr-val { color: var(--yellow); }
+
+    /* カスタム出発地ドロップダウン */
+    .dep-wrapper { position: relative; flex: 1; }
+    .dep-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--card); border: 2px solid var(--accent);
+      border-radius: 12px; max-height: 240px; overflow-y: auto;
+      z-index: 300; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    }
+    .dep-list-item {
+      padding: 14px 16px; font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dep-list-item:last-child { border-bottom: none; }
+    .dep-list-item:active { background: rgba(59,130,246,.25); }
   </style>
 </head>
 <body>
@@ -279,9 +296,9 @@
   <div class="section">
     <div class="section-title">🚙 車両選択</div>
     <div class="car-cards" id="setup-car-cards">
-      <div class="car-card active" data-car="A"><div class="car-emoji">🚗</div><div class="car-id">車A</div><div class="car-model">MRワゴン</div></div>
-      <div class="car-card" data-car="B"><div class="car-emoji">🚗</div><div class="car-id">車B</div><div class="car-model">タント</div></div>
-      <div class="car-card" data-car="C"><div class="car-emoji">🚗</div><div class="car-id">車C</div><div class="car-model">ムーブ</div></div>
+      <div class="car-card active" data-car="A"><div class="car-emoji">🚗</div><div class="car-id">MRワゴン</div><div class="car-model" style="color:var(--yellow);font-size:11px;margin-top:3px"></div></div>
+      <div class="car-card" data-car="B"><div class="car-emoji">🚗</div><div class="car-id">タント</div><div class="car-model" style="color:var(--yellow);font-size:11px;margin-top:3px"></div></div>
+      <div class="car-card" data-car="C"><div class="car-emoji">🚗</div><div class="car-id">ムーブ</div><div class="car-model" style="color:var(--yellow);font-size:11px;margin-top:3px"></div></div>
     </div>
     <div style="margin-top:12px">
       <div class="input-row">
@@ -366,7 +383,7 @@
       <table>
         <thead>
           <tr>
-            <th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th>
+            <th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th>
           </tr>
         </thead>
         <tbody id="ride-tbody">
@@ -408,12 +425,15 @@
       <label>お名前</label>
       <input type="text" id="ride-customer" placeholder="山田 太郎" autocomplete="off">
     </div>
-    <!-- 出発地（datalist + マップボタン） -->
+    <!-- 出発地（カスタムドロップダウン + マップボタン） -->
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <label style="font-size:12px;color:var(--muted);width:54px;flex-shrink:0;font-weight:600">出発地</label>
-      <input type="text" id="ride-departure" list="departure-list"
-             placeholder="場所を選択または入力" autocomplete="off"
-             style="flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">
+      <div class="dep-wrapper">
+        <input type="text" id="ride-departure"
+               placeholder="▼ タップでリスト表示" autocomplete="off"
+               style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%">
+        <div id="dep-list" class="dep-list hidden"></div>
+      </div>
       <button type="button" id="dep-map-btn" class="map-btn" title="マップで確認">🗺</button>
     </div>
     <!-- 目的地（出発前に入力） -->
@@ -421,42 +441,6 @@
       <label>目的地</label>
       <input type="text" id="ride-destination" placeholder="川平方面・○○ホテル" autocomplete="off">
     </div>
-    <!-- 石垣島 駐車場・スポット datalist -->
-    <datalist id="departure-list">
-      <option value="蔵元駐車場">
-      <option value="石垣港離島ターミナル第1駐車場">
-      <option value="堤防駐車場">
-      <option value="八島第2駐車場">
-      <option value="石垣島離島ターミナル第2臨時駐車場">
-      <option value="石垣港離島ターミナル第2駐車場">
-      <option value="大川有料駐車場">
-      <option value="まるくに駐車場">
-      <option value="Dパーキング石垣市大川第一">
-      <option value="OGLパーキング">
-      <option value="タケトミタウンパーキング">
-      <option value="アイランドパーキング20石垣島">
-      <option value="akkipa登野城駐車場">
-      <option value="ひとし駐車場">
-      <option value="シーサーパーキング">
-      <option value="石垣島宿泊施設わったー家8・9番駐車場">
-      <option value="サザンゲートブリッジ">
-      <option value="ユーグレナ石垣港離島ターミナル">
-      <option value="石垣市中央運動公園駐車場">
-      <option value="南ぬ島石垣空港">
-      <option value="バンナ公園">
-      <option value="石垣市役所">
-      <option value="マックスバリュ石垣店">
-      <option value="イオンタウン石垣">
-      <option value="ドン・キホーテ石垣店">
-      <option value="川平湾">
-      <option value="米原ビーチ">
-      <option value="フサキビーチ">
-      <option value="底地ビーチ">
-      <option value="白保海岸">
-      <option value="ANAインターコンチネンタル石垣リゾート">
-      <option value="フサキビーチリゾート">
-      <option value="グランヴィリオリゾート石垣島">
-    </datalist>
   </div>
 
   <!-- 料金タイプ（出発前に選択） -->
@@ -595,7 +579,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>金額</th><th>支払</th></tr>
+          <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>金額</th><th>支払</th><th>経路</th></tr>
         </thead>
         <tbody id="endshift-tbody"></tbody>
       </table>
@@ -658,9 +642,9 @@ const SPOTS = {
 // 車両定義
 // ============================================================
 const CARS = {
-  A: { id: 'car_a', name: '車A', model: 'MRワゴン' },
-  B: { id: 'car_b', name: '車B', model: 'タント'   },
-  C: { id: 'car_c', name: '車C', model: 'ムーブ'   }
+  A: { id: 'car_a', name: 'MRワゴン', plate: 'も90-39' },
+  B: { id: 'car_b', name: 'タント',   plate: 'よ95-24' },
+  C: { id: 'car_c', name: 'ムーブ',   plate: 'ゆ83-01' }
 };
 
 // ============================================================
@@ -752,11 +736,18 @@ function initSetup() {
   document.getElementById('setup-date-label').textContent = todayJP();
   document.querySelectorAll('#setup-car-cards .car-card').forEach(card => {
     card.addEventListener('click', function() {
-      document.querySelectorAll('#setup-car-cards .car-card').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#setup-car-cards .car-card').forEach(c => {
+        c.classList.remove('active');
+        c.querySelector('.car-model').textContent = '';
+      });
       this.classList.add('active');
       state.car = this.dataset.car;
+      this.querySelector('.car-model').textContent = CARS[state.car].plate;
     });
   });
+  // 初期選択車のナンバー表示
+  const initCard = document.querySelector('#setup-car-cards .car-card.active');
+  if (initCard) initCard.querySelector('.car-model').textContent = CARS[initCard.dataset.car].plate;
   document.querySelectorAll('#weather-group .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('#weather-group .radio-btn').forEach(b => b.classList.remove('active'));
@@ -784,18 +775,20 @@ function refreshChangeTotals() {
 async function startShift() {
   const d1 = document.getElementById('driver1-name').value;
   const d2 = document.getElementById('driver2-name').value;
+  const smInput = document.getElementById('start-meter').value.trim();
   if (!d1) { alert('担当者1（2種メンバー）を選択してください'); return; }
   if (!d2) { alert('担当者2（随行メンバー）を選択してください'); return; }
+  if (smInput === '') { alert('始業kmを入力してください'); return; }
   state.driver1Name = d1;
   state.driver1Time = document.getElementById('driver1-time').value;
   state.driver2Name = d2;
   state.driver2Time = document.getElementById('driver2-time').value;
-  state.startMeter  = parseInt(document.getElementById('start-meter').value) || 0;
+  state.startMeter  = parseInt(smInput) || 0;
   state.shiftDate   = todayISO();
   state.rides       = [];
   state.shiftId     = null;
   const row = await sbPost('/rest/v1/shifts', {
-    car_id: CARS[state.car].id, car_name: CARS[state.car].name, car_model: CARS[state.car].model,
+    car_id: CARS[state.car].id, car_name: CARS[state.car].name, car_model: CARS[state.car].plate,
     driver1_name: state.driver1Name, driver1_start: state.driver1Time,
     driver2_name: state.driver2Name, driver2_start: state.driver2Time,
     weather: state.weather, start_meter: state.startMeter,
@@ -812,7 +805,7 @@ async function startShift() {
 // ============================================================
 function renderMain() {
   const car = CARS[state.car];
-  document.getElementById('main-title').textContent = `🚗 車${state.car}（${car.model}）`;
+  document.getElementById('main-title').textContent = `🚗 ${car.name}（${car.plate}）`;
   document.getElementById('main-sub').textContent =
     `${state.driver1Name} / ${state.driver2Name}　${state.weather}　${todayJP()}`;
   renderRideTable();
@@ -849,16 +842,23 @@ function renderRideTable() {
     const destLabel = r.arrivalPlace || r.destination || '—';
     const destCell  = destLabel !== '—'
       ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+    // 経路リンク（出発GPS → 到着GPS）
+    const routeUrl = (r.depLat && r.arrivalLat)
+      ? `https://maps.google.com/maps/dir/${r.depLat},${r.depLng}/${r.arrivalLat},${r.arrivalLng}`
+      : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrivalPlace||r.destination||'')}`;
+    const hasRoute = r.arrivalLat || r.destination || r.arrivalPlace;
+    const routeCell = hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—';
     return `<tr>
       <td>${i+1}</td>
       <td>${r.depTime||'—'}</td>
-      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${depCell}</td>
+      <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${depCell}</td>
       <td>${r.arrTime||'—'}</td>
-      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${destCell}</td>
+      <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${destCell}</td>
       <td>${durStr}</td>
       <td>${distStr}</td>
       <td style="font-weight:700">¥${r.fare.toLocaleString()}</td>
       <td class="${payClass}">${payLabel}</td>
+      <td>${routeCell}</td>
     </tr>`;
   }).join('');
 }
@@ -894,7 +894,7 @@ function startNewRide() {
   const seq = state.rides.length + 1;
   document.getElementById('ride-title').textContent = `🚗 代行 #${seq}`;
   document.getElementById('ride-sub').textContent =
-    `車${state.car} | ${state.driver1Name} / ${state.driver2Name}`;
+    `${CARS[state.car].name} | ${state.driver1Name} / ${state.driver2Name}`;
 
   // フォームリセット
   ['ride-customer','ride-departure','ride-destination','ride-notes'].forEach(id => {
@@ -938,6 +938,9 @@ function doDepart() {
   document.getElementById('fare-type-section').classList.add('hidden');
   document.getElementById('section-driving').classList.remove('hidden');
   syncFareTypeBtns('fare-type-driving', 'faretype2', rideFareType);
+  // 初乗り料金を表示
+  rideFare = calcFare(0, rideFareType);
+  document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
 
   if (navigator.geolocation) {
     gpsWatchId = navigator.geolocation.watchPosition(onGpsPos, onGpsErr, {
@@ -1098,19 +1101,43 @@ function initEndShift() {
   `;
   document.getElementById('endshift-tbody').innerHTML = rides.map((r,i) => {
     const payLabel = r.payment === 'cash' ? '現金' : 'カード等';
+    // 出発地リンク
+    let depUrl2;
+    if (r.depLat) {
+      depUrl2 = `https://maps.google.com/?q=${r.depLat},${r.depLng}`;
+    } else {
+      const spot2 = SPOTS[r.departure];
+      depUrl2 = spot2 ? `https://maps.google.com/?q=${spot2.lat},${spot2.lng}`
+                      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.departure||''))}`;
+    }
+    const depCell2 = r.departure ? `<a href="${depUrl2}" target="_blank">${r.departure}</a>` : '—';
+    // 到着地リンク
+    const destUrl2 = r.arrivalLat
+      ? `https://maps.google.com/?q=${r.arrivalLat},${r.arrivalLng}`
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.arrivalPlace||r.destination||''))}`;
+    const destLabel2 = r.arrivalPlace || r.destination || '—';
+    const destCell2 = destLabel2 !== '—' ? `<a href="${destUrl2}" target="_blank">${destLabel2}</a>` : '—';
+    // 経路リンク
+    const routeUrl2 = (r.depLat && r.arrivalLat)
+      ? `https://maps.google.com/maps/dir/${r.depLat},${r.depLng}/${r.arrivalLat},${r.arrivalLng}`
+      : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrivalPlace||r.destination||'')}`;
+    const hasRoute2 = r.arrivalLat || r.destination || r.arrivalPlace;
     return `<tr>
       <td>${i+1}</td>
       <td>${r.depTime||'—'}</td>
-      <td style="text-align:left;font-size:11px">${r.departure||'—'}</td>
+      <td style="text-align:left;font-size:11px">${depCell2}</td>
       <td>${r.arrTime||'—'}</td>
-      <td style="text-align:left;font-size:11px">${r.arrivalPlace||r.destination||'—'}</td>
+      <td style="text-align:left;font-size:11px">${destCell2}</td>
       <td style="font-weight:700">¥${r.fare.toLocaleString()}</td>
       <td>${payLabel}</td>
+      <td>${hasRoute2 ? `<a href="${routeUrl2}" target="_blank">🗺</a>` : '—'}</td>
     </tr>`;
   }).join('');
 }
 async function confirmEndShift() {
-  const endMeter = parseInt(document.getElementById('end-meter').value) || 0;
+  const endMeterInput = document.getElementById('end-meter').value.trim();
+  if (!endMeterInput) { alert('終業kmを入力してください'); return; }
+  const endMeter = parseInt(endMeterInput) || 0;
   const rides = state.rides;
   let cash = 0, cashless = 0;
   rides.forEach(r => { r.payment === 'cash' ? cash += r.fare : cashless += r.fare; });
@@ -1177,10 +1204,50 @@ async function pushVehicleLocation(lat,lng) {
 }
 
 // ============================================================
+// カスタム出発地ドロップダウン
+// ============================================================
+function initDepartureDropdown() {
+  const input = document.getElementById('ride-departure');
+  const list  = document.getElementById('dep-list');
+  const allSpots = Object.keys(SPOTS);
+
+  function renderList(filter) {
+    const q = (filter || '').trim();
+    const items = q ? allSpots.filter(s => s.includes(q)) : allSpots;
+    if (items.length === 0) { list.classList.add('hidden'); return; }
+    list.innerHTML = items.map(s => `<div class="dep-list-item">${s}</div>`).join('');
+    list.querySelectorAll('.dep-list-item').forEach(item => {
+      // PC（マウス）
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        input.value = this.textContent;
+        list.classList.add('hidden');
+      });
+      // スマホ（タッチ）
+      item.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        input.value = this.textContent;
+        list.classList.add('hidden');
+        input.blur();
+      });
+    });
+    list.classList.remove('hidden');
+  }
+
+  input.addEventListener('focus', () => renderList(input.value));
+  input.addEventListener('click', () => renderList(input.value));
+  input.addEventListener('input', () => renderList(input.value));
+  input.addEventListener('blur', () => {
+    setTimeout(() => list.classList.add('hidden'), 300);
+  });
+}
+
+// ============================================================
 // DOMContentLoaded
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   initSetup();
+  initDepartureDropdown();
 
   // ── メイン画面
   document.getElementById('btn-new-ride').addEventListener('click', startNewRide);
