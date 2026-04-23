@@ -6,137 +6,85 @@
   <title>A1運転代行 スタッフ</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
-      --accent: #3b82f6;
-      --green: #22c55e;
-      --red: #ef4444;
-      --yellow: #f59e0b;
-      --line: #06c755;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --purple: #a855f7;
+      --bg: #0f172a; --card: #1e293b; --border: #334155;
+      --accent: #3b82f6; --green: #22c55e; --red: #ef4444;
+      --yellow: #f59e0b; --line: #06c755; --text: #f1f5f9; --muted: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding-bottom: 100px;
+      font-family: -apple-system,'Helvetica Neue','Hiragino Sans',sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; padding-bottom: 110px;
     }
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* ヘッダー */
     header {
-      background: var(--card);
-      padding: 12px 16px;
+      background: var(--card); padding: 12px 16px;
       border-bottom: 2px solid var(--accent);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      position: sticky; top: 0; z-index: 100;
     }
     header h1 { font-size: 16px; font-weight: 700; }
-    header p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    header p  { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    /* セクション */
     .section {
-      background: var(--card);
-      margin: 10px 12px;
-      border-radius: 12px;
-      padding: 14px 16px;
+      background: var(--card); margin: 10px 12px;
+      border-radius: 12px; padding: 14px 16px;
     }
     .section-title {
-      font-size: 11px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-      font-weight: 700;
+      font-size: 11px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 10px; font-weight: 700;
     }
 
-    /* ラジオボタン */
+    /* ラジオ */
     .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .radio-btn {
-      padding: 10px 14px;
-      background: var(--bg);
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      transition: border-color 0.15s;
+      padding: 10px 14px; background: var(--bg);
+      border: 2px solid var(--border); border-radius: 10px;
+      text-align: center; cursor: pointer; font-size: 14px; font-weight: 700;
+      color: var(--muted); user-select: none;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      transition: border-color .15s;
     }
     .radio-btn small { font-size: 10px; font-weight: 400; display: block; margin-top: 2px; }
-    .radio-btn.active {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(59,130,246,0.12);
-    }
-    .radio-btn.active-green {
-      border-color: var(--green);
-      color: var(--green);
-      background: rgba(34,197,94,0.12);
-    }
+    .radio-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,.12); }
 
     /* インプット */
-    .input-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
+    .input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
     .input-row:last-child { margin-bottom: 0; }
     .input-row label {
-      font-size: 12px;
-      color: var(--muted);
-      width: 60px;
-      flex-shrink: 0;
-      font-weight: 600;
+      font-size: 12px; color: var(--muted); width: 54px;
+      flex-shrink: 0; font-weight: 600;
     }
-    .input-row input, .input-row select, .input-row textarea {
-      flex: 1;
-      padding: 10px 12px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 15px;
-      font-family: inherit;
+    .input-row input, .input-row select {
+      flex: 1; padding: 10px 12px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 15px; font-family: inherit;
     }
-    .input-row input:focus, .input-row select:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
+    .input-row input:focus, .input-row select:focus { outline: none; border-color: var(--accent); }
     select option { background: var(--card); }
 
-    /* ボタン */
-    .btn {
-      display: block;
-      width: calc(100% - 24px);
-      margin: 8px 12px;
-      padding: 20px;
-      border: none;
-      border-radius: 14px;
-      font-size: 18px;
-      font-weight: 800;
-      cursor: pointer;
-      letter-spacing: 1px;
+    /* マップボタン */
+    .map-btn {
+      width: 40px; height: 40px; border: none; border-radius: 8px;
+      background: var(--accent); color: #fff; font-size: 18px;
+      cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      -webkit-appearance: none;
-      appearance: none;
-      transition: transform 0.1s, opacity 0.1s;
     }
-    .btn:active { transform: scale(0.97); opacity: 0.85; }
-    .btn:disabled { opacity: 0.3; pointer-events: none; }
+    .map-btn:active { opacity: 0.8; }
+
+    /* ボタン全般 */
+    .btn {
+      display: block; width: calc(100% - 24px); margin: 8px 12px;
+      padding: 20px; border: none; border-radius: 14px;
+      font-size: 18px; font-weight: 800; cursor: pointer; letter-spacing: 1px;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      -webkit-appearance: none; appearance: none;
+      transition: transform .1s, opacity .1s;
+    }
+    .btn:active { transform: scale(.97); opacity: .85; }
+    .btn:disabled { opacity: .3; pointer-events: none; }
     .btn-green  { background: var(--green);  color: #fff; }
     .btn-red    { background: var(--red);    color: #fff; }
     .btn-blue   { background: var(--accent); color: #fff; }
@@ -148,220 +96,179 @@
     /* 車両カード */
     .car-cards { display: flex; gap: 8px; }
     .car-card {
-      flex: 1;
-      background: var(--bg);
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 6px;
-      text-align: center;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: border-color 0.15s;
+      flex: 1; background: var(--bg); border: 2px solid var(--border);
+      border-radius: 10px; padding: 12px 6px; text-align: center;
+      cursor: pointer; touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent; transition: border-color .15s;
     }
-    .car-card.active {
-      border-color: var(--accent);
-      background: rgba(59,130,246,0.12);
-    }
+    .car-card.active { border-color: var(--accent); background: rgba(59,130,246,.12); }
     .car-card .car-emoji { font-size: 22px; }
-    .car-card .car-id { font-size: 14px; font-weight: 800; margin-top: 4px; }
+    .car-card .car-id    { font-size: 14px; font-weight: 800; margin-top: 4px; }
     .car-card .car-model { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-    /* おつり確認 */
+    /* おつり */
     .change-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 11px 0;
-      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 0; border-bottom: 1px solid var(--border);
     }
     .change-row:last-child { border-bottom: none; }
     .change-row .lbl { font-size: 14px; flex: 1; }
     .change-row .amt { font-size: 13px; color: var(--yellow); font-weight: 600; width: 70px; text-align: right; }
     .ck-box {
-      width: 30px;
-      height: 30px;
-      border: 2px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 17px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      margin-left: 12px;
-      flex-shrink: 0;
+      width: 30px; height: 30px; border: 2px solid var(--border); border-radius: 6px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 17px; touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent; margin-left: 12px; flex-shrink: 0;
     }
     .ck-box.on { background: var(--green); border-color: var(--green); }
     .change-total {
-      text-align: center;
-      font-size: 20px;
-      font-weight: 800;
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 8px;
+      text-align: center; font-size: 20px; font-weight: 800;
+      margin-top: 12px; padding: 10px; border-radius: 8px;
     }
-    .change-total.ok { background: rgba(34,197,94,0.15); color: var(--green); }
-    .change-total.ng { background: rgba(239,68,68,0.1); color: var(--red); }
+    .change-total.ok { background: rgba(34,197,94,.15); color: var(--green); }
+    .change-total.ng { background: rgba(239,68,68,.1); color: var(--red); }
 
-    /* 乗務記録テーブル */
+    /* 記録テーブル */
     .table-wrap { overflow-x: auto; margin: 0 -2px; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th {
-      background: var(--bg);
-      padding: 6px 6px;
-      text-align: center;
-      color: var(--muted);
-      font-weight: 600;
-      white-space: nowrap;
-      font-size: 11px;
+      background: var(--bg); padding: 6px 5px; text-align: center;
+      color: var(--muted); font-weight: 600; white-space: nowrap; font-size: 11px;
     }
     td {
-      padding: 9px 5px;
-      border-bottom: 1px solid var(--border);
-      text-align: center;
-      vertical-align: middle;
+      padding: 9px 5px; border-bottom: 1px solid var(--border);
+      text-align: center; vertical-align: middle;
     }
     tr:last-child td { border-bottom: none; }
-    .pay-cash   { color: var(--green); font-weight: 700; }
-    .pay-card   { color: var(--accent); font-weight: 700; }
-    .pay-paypay { color: var(--red); font-weight: 700; }
+    td a { color: var(--accent); text-decoration: none; }
+    td a:active { opacity: .7; }
+    .pay-cash     { color: var(--green); font-weight: 700; }
+    .pay-cashless { color: var(--accent); font-weight: 700; }
 
-    /* 合計バー（メイン画面下部固定） */
+    /* 下部固定バー（メイン） */
     .bottom-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      padding: 8px 12px;
-      z-index: 50;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 8px 12px; z-index: 50;
     }
-    .total-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
+    .total-row { display: flex; gap: 6px; margin-bottom: 8px; }
     .total-box {
-      flex: 1;
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 8px 6px;
-      text-align: center;
+      flex: 1; background: var(--bg); border-radius: 8px;
+      padding: 8px 4px; text-align: center;
     }
-    .total-box .tv { font-size: 17px; font-weight: 800; }
+    .total-box .tv { font-size: 16px; font-weight: 800; }
     .total-box .tl { font-size: 10px; color: var(--muted); margin-top: 2px; }
     .btn-row { display: flex; gap: 8px; }
     .btn-row .btn { margin: 0; width: auto; flex: 1; padding: 14px; font-size: 15px; }
 
-    /* GPS ドット */
+    /* GPS */
     .gps-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 12px;
-      background: var(--bg);
-      border-radius: 8px;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; background: var(--bg); border-radius: 8px;
+      font-size: 12px; color: var(--muted); margin-top: 8px;
     }
     .gps-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: var(--border);
-      flex-shrink: 0;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--border); flex-shrink: 0;
     }
     .gps-dot.on { background: var(--green); animation: blink 1.2s infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     /* 走行中メトリクス */
-    .metrics { display: flex; gap: 8px; margin: 10px 0; }
+    .metrics { display: flex; gap: 8px; margin: 10px 0 8px; }
     .metric {
-      flex: 1;
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 14px 8px;
-      text-align: center;
+      flex: 1; background: var(--bg); border-radius: 10px;
+      padding: 14px 8px; text-align: center;
     }
-    .metric .mv { font-size: 36px; font-weight: 800; line-height: 1; }
-    .metric .mu { font-size: 14px; color: var(--muted); }
+    .metric .mv { font-size: 34px; font-weight: 800; line-height: 1; }
+    .metric .mu { font-size: 13px; color: var(--muted); }
     .metric .ml { font-size: 10px; color: var(--muted); margin-top: 6px; text-transform: uppercase; }
 
-    /* 料金表示 */
-    .fare-big {
-      font-size: 52px;
-      font-weight: 800;
-      text-align: center;
-      color: var(--yellow);
-      padding: 8px 0 4px;
-      letter-spacing: -2px;
+    /* 走行中現在料金 */
+    .live-fare-box {
+      background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3);
+      border-radius: 10px; padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0;
     }
-    .fare-input {
-      width: 100%;
-      padding: 12px 14px;
-      background: var(--bg);
-      border: 2px solid var(--accent);
-      border-radius: 10px;
-      color: var(--yellow);
-      font-size: 24px;
-      font-weight: 800;
-      text-align: right;
-      margin-top: 8px;
-      -webkit-appearance: none;
+    .live-fare-box .lf-val { font-size: 28px; font-weight: 800; color: var(--yellow); }
+    .live-fare-box .lf-lbl { font-size: 10px; color: var(--muted); }
+
+    /* 料金 */
+    .fare-big {
+      font-size: 52px; font-weight: 800; text-align: center;
+      color: var(--yellow); padding: 8px 0 4px; letter-spacing: -2px;
     }
 
-    /* 退勤サマリー */
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 15px;
+    /* 金額調整ボタン */
+    .adj-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 6px; margin: 10px 0 8px;
     }
-    .summary-row:last-child { border-bottom: none; }
-    .summary-row .sr-label { color: var(--muted); }
-    .summary-row .sr-val { font-weight: 700; font-size: 18px; }
-    .summary-row.total .sr-label { font-weight: 700; color: var(--text); font-size: 16px; }
-    .summary-row.total .sr-val { font-size: 24px; }
-    .summary-row.commission .sr-val { color: var(--yellow); }
+    .adj-btn {
+      padding: 12px 4px; border: 2px solid var(--border); border-radius: 10px;
+      background: var(--bg); color: var(--text); font-size: 14px; font-weight: 700;
+      cursor: pointer; touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .1s;
+    }
+    .adj-btn.plus  { border-color: var(--green); color: var(--green); }
+    .adj-btn.minus { border-color: var(--red); color: var(--red); }
+    .adj-btn:active { opacity: .7; }
+
+    .fare-input {
+      width: 100%; padding: 12px 14px; background: var(--bg);
+      border: 2px solid var(--accent); border-radius: 10px;
+      color: var(--yellow); font-size: 24px; font-weight: 800;
+      text-align: right; -webkit-appearance: none;
+    }
+
+    /* 到着地住所 */
+    .arrival-loc {
+      background: var(--bg); border-radius: 8px; padding: 10px 12px;
+      margin-bottom: 0;
+    }
+    .arrival-loc .al-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .arrival-loc .al-addr { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .arrival-loc .al-map  {
+      display: inline-block; margin-top: 8px; padding: 6px 14px;
+      background: var(--accent); color: #fff; border-radius: 20px;
+      font-size: 12px; font-weight: 700; text-decoration: none;
+    }
 
     /* 担当者カード */
     .driver-card {
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
+      background: var(--bg); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 10px;
     }
     .driver-card:last-child { margin-bottom: 0; }
-    .driver-card-title {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
 
+    /* テキストエリア */
     textarea.note-input {
-      width: 100%;
-      padding: 10px 12px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: inherit;
-      resize: none;
-      height: 58px;
+      width: 100%; padding: 10px 12px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      resize: none; height: 58px;
     }
     textarea.note-input:focus { outline: none; border-color: var(--accent); }
+
+    /* 退勤サマリー */
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 15px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row .sr-label { color: var(--muted); }
+    .summary-row .sr-val   { font-weight: 700; font-size: 18px; }
+    .summary-row.total .sr-val { font-size: 24px; }
+    .summary-row.commission .sr-val { color: var(--yellow); }
   </style>
 </head>
 <body>
 
-<!-- ========================================================
+<!-- ====================================================
      SCREEN 1: 始業登録
-     ======================================================== -->
+     ==================================================== -->
 <div id="screen-setup" class="screen active">
   <header>
     <h1>🚗 A1運転代行 始業登録</h1>
@@ -396,10 +303,7 @@
         <label>氏名</label>
         <select id="driver1-name">
           <option value="">選択してください</option>
-          <option>社長</option>
-          <option>茅原</option>
-          <option>金城</option>
-          <option>ホズミ</option>
+          <option>社長</option><option>茅原</option><option>金城</option><option>ホズミ</option>
         </select>
       </div>
     </div>
@@ -417,12 +321,8 @@
         <label>氏名</label>
         <select id="driver2-name">
           <option value="">選択してください</option>
-          <option>譜久島</option>
-          <option>崎山</option>
-          <option>タカヒロ</option>
-          <option>上原</option>
-          <option>大山</option>
-          <option>西川</option>
+          <option>譜久島</option><option>崎山</option><option>タカヒロ</option>
+          <option>上原</option><option>大山</option><option>西川</option>
         </select>
       </div>
     </div>
@@ -441,89 +341,49 @@
   <!-- おつり確認 -->
   <div class="section">
     <div class="section-title">💴 おつり確認（合計 ¥15,000）</div>
-    <div class="change-row">
-      <span class="lbl">5,000円 × 1枚</span>
-      <span class="amt">¥5,000</span>
-      <div class="ck-box on" id="ck-5000" data-val="5000">✓</div>
-    </div>
-    <div class="change-row">
-      <span class="lbl">1,000円 × 6枚</span>
-      <span class="amt">¥6,000</span>
-      <div class="ck-box" id="ck-1000" data-val="6000"></div>
-    </div>
-    <div class="change-row">
-      <span class="lbl">500円 × 4枚</span>
-      <span class="amt">¥2,000</span>
-      <div class="ck-box" id="ck-500" data-val="2000"></div>
-    </div>
-    <div class="change-row">
-      <span class="lbl">100円 × 20枚</span>
-      <span class="amt">¥2,000</span>
-      <div class="ck-box" id="ck-100" data-val="2000"></div>
-    </div>
+    <div class="change-row"><span class="lbl">5,000円 × 1枚</span><span class="amt">¥5,000</span><div class="ck-box on" id="ck-5000" data-val="5000">✓</div></div>
+    <div class="change-row"><span class="lbl">1,000円 × 6枚</span><span class="amt">¥6,000</span><div class="ck-box" id="ck-1000" data-val="6000"></div></div>
+    <div class="change-row"><span class="lbl">500円 × 4枚</span><span class="amt">¥2,000</span><div class="ck-box" id="ck-500" data-val="2000"></div></div>
+    <div class="change-row"><span class="lbl">100円 × 20枚</span><span class="amt">¥2,000</span><div class="ck-box" id="ck-100" data-val="2000"></div></div>
     <div class="change-total ng" id="change-total-display">¥5,000 / ¥15,000</div>
   </div>
 
   <button class="btn btn-green" id="btn-start-shift">✅ 始業開始</button>
 </div>
 
-<!-- ========================================================
+<!-- ====================================================
      SCREEN 2: メイン（乗務記録）
-     ======================================================== -->
+     ==================================================== -->
 <div id="screen-main" class="screen">
   <header>
     <h1 id="main-title">🚗 A1運転代行</h1>
     <p id="main-sub"></p>
   </header>
 
-  <!-- 乗務記録表 -->
   <div class="section" style="padding-bottom:8px">
     <div class="section-title">📋 本日の乗務記録</div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>#</th>
-            <th>出発時刻</th>
-            <th>出発地</th>
-            <th>到着時刻</th>
-            <th>目的地</th>
-            <th>時間</th>
-            <th>距離</th>
-            <th>金額</th>
-            <th>支払</th>
+            <th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th>
           </tr>
         </thead>
         <tbody id="ride-tbody">
           <tr id="no-ride-row">
-            <td colspan="9" style="color:var(--muted);padding:24px;font-size:13px">
-              まだ記録がありません
-            </td>
+            <td colspan="9" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- 下部固定バー -->
   <div class="bottom-bar">
     <div class="total-row">
-      <div class="total-box">
-        <div class="tv" id="total-all">¥0</div>
-        <div class="tl">本日合計</div>
-      </div>
-      <div class="total-box">
-        <div class="tv" style="color:var(--green)" id="total-cash">¥0</div>
-        <div class="tl">現金</div>
-      </div>
-      <div class="total-box">
-        <div class="tv" style="color:var(--accent)" id="total-card">¥0</div>
-        <div class="tl">カード/Pay</div>
-      </div>
-      <div class="total-box" style="background:rgba(245,158,11,0.1)">
-        <div class="tv" style="color:var(--yellow)" id="total-comm">¥0</div>
-        <div class="tl">歩合 30%</div>
-      </div>
+      <div class="total-box"><div class="tv" id="total-all">¥0</div><div class="tl">本日合計</div></div>
+      <div class="total-box"><div class="tv" style="color:var(--green)" id="total-cash">¥0</div><div class="tl">現金</div></div>
+      <div class="total-box"><div class="tv" style="color:var(--accent)" id="total-cashless">¥0</div><div class="tl">カード等</div></div>
+      <div class="total-box" style="background:rgba(245,158,11,.1)"><div class="tv" style="color:var(--yellow)" id="total-comm">¥0</div><div class="tl">歩合30%</div></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-green" id="btn-new-ride" style="flex:2">＋ 新規代行</button>
@@ -532,9 +392,9 @@
   </div>
 </div>
 
-<!-- ========================================================
+<!-- ====================================================
      SCREEN 3: 代行中
-     ======================================================== -->
+     ==================================================== -->
 <div id="screen-ride" class="screen">
   <header>
     <h1 id="ride-title">🚗 代行 #1</h1>
@@ -548,28 +408,76 @@
       <label>お名前</label>
       <input type="text" id="ride-customer" placeholder="山田 太郎" autocomplete="off">
     </div>
-    <div class="input-row">
-      <label>出発地</label>
-      <input type="text" id="ride-departure" placeholder="港周辺・居酒屋○○" autocomplete="off">
+    <!-- 出発地（datalist + マップボタン） -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <label style="font-size:12px;color:var(--muted);width:54px;flex-shrink:0;font-weight:600">出発地</label>
+      <input type="text" id="ride-departure" list="departure-list"
+             placeholder="場所を選択または入力" autocomplete="off"
+             style="flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px">
+      <button type="button" id="dep-map-btn" class="map-btn" title="マップで確認">🗺</button>
     </div>
+    <!-- 目的地（出発前に入力） -->
+    <div class="input-row">
+      <label>目的地</label>
+      <input type="text" id="ride-destination" placeholder="川平方面・○○ホテル" autocomplete="off">
+    </div>
+    <!-- 石垣島 駐車場・スポット datalist -->
+    <datalist id="departure-list">
+      <option value="730記念広場駐車場">
+      <option value="美崎町市営駐車場">
+      <option value="石垣港離島ターミナル">
+      <option value="八島町駐車場">
+      <option value="ユーグレナモール周辺">
+      <option value="イオンタウン石垣駐車場">
+      <option value="マックスバリュ石垣店">
+      <option value="ドン・キホーテ石垣店">
+      <option value="南ぬ島石垣空港">
+      <option value="バンナ公園駐車場">
+      <option value="石垣市役所駐車場">
+      <option value="川平湾駐車場">
+      <option value="白保海岸駐車場">
+      <option value="米原ビーチ駐車場">
+      <option value="フサキビーチ駐車場">
+      <option value="底地ビーチ駐車場">
+      <option value="石垣市中央運動公園">
+      <option value="石垣市公設市場">
+      <option value="あやぱにモール">
+      <option value="ホテルロイヤルマリンパレス石垣島">
+      <option value="アートホテル石垣島">
+      <option value="グランヴィリオリゾート石垣島">
+      <option value="ANAインターコンチネンタル石垣リゾート">
+    </datalist>
   </div>
 
-  <!-- 料金タイプ -->
+  <!-- 料金タイプ（出発前に選択） -->
   <div class="section" id="fare-type-section">
     <div class="section-title">💰 料金タイプ</div>
     <div class="radio-group" id="fare-type-group">
-      <div class="radio-btn active" data-faretype="general">一般<small>観光客</small></div>
-      <div class="radio-btn" data-faretype="local">地元割<small>地元割引</small></div>
+      <div class="radio-btn active" data-faretype="general" style="flex:1">一般<small>観光客向け</small></div>
+      <div class="radio-btn" data-faretype="local" style="flex:1">地元割<small>地元割引</small></div>
     </div>
   </div>
 
-  <!-- 出発前ボタン -->
+  <!-- 出発ボタン（出発前のみ） -->
   <div id="section-pre-depart">
     <button class="btn btn-yellow" id="btn-depart">📍 出発（時刻を記録）</button>
   </div>
 
-  <!-- 走行中 -->
+  <!-- ★ 走行中 -->
   <div id="section-driving" class="hidden">
+
+    <!-- 料金タイプ切替（走行中も変更可） -->
+    <div class="section" style="padding:10px 14px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:11px;color:var(--muted);font-weight:700">料金タイプ（変更可）</span>
+        <div class="radio-group" id="fare-type-driving" style="flex-wrap:nowrap">
+          <div class="radio-btn active" data-faretype2="general" style="padding:6px 14px;font-size:13px">一般</div>
+          <div class="radio-btn" data-faretype2="local" style="padding:6px 14px;font-size:13px">地元割</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GPS メトリクス + 現在料金 -->
     <div class="section">
       <div class="section-title">🛣 走行中</div>
       <div class="metrics">
@@ -582,49 +490,62 @@
           <div class="ml">経過時間</div>
         </div>
       </div>
+      <!-- 現在料金（リアルタイム） -->
+      <div class="live-fare-box" id="live-fare-box">
+        <div>
+          <div class="lf-lbl">現在の料金（目安）</div>
+          <div class="lf-val" id="live-fare">¥0</div>
+        </div>
+        <div style="font-size:24px">💴</div>
+      </div>
       <div class="gps-row">
         <div class="gps-dot on" id="gps-dot"></div>
         <span id="gps-text">GPS: 取得中...</span>
       </div>
     </div>
-    <div class="section">
-      <div class="section-title">📍 目的地</div>
-      <div class="input-row">
-        <label>目的地</label>
-        <input type="text" id="ride-destination" placeholder="市街地・川平方面" autocomplete="off">
-      </div>
-    </div>
+
     <button class="btn btn-red" id="btn-arrive">🏁 到着（計測ストップ）</button>
   </div>
 
-  <!-- 到着後 -->
+  <!-- ★ 到着後 -->
   <div id="section-arrived" class="hidden">
+
+    <!-- 到着地住所 -->
     <div class="section">
-      <div class="section-title">📍 目的地</div>
-      <div class="input-row">
-        <label>目的地</label>
-        <input type="text" id="ride-destination2" placeholder="市街地・川平方面" autocomplete="off">
+      <div class="section-title">📍 到着地</div>
+      <div class="arrival-loc" id="arrival-loc-box">
+        <div class="al-name" id="arrival-place-name">取得中...</div>
+        <div class="al-addr" id="arrival-full-addr"></div>
+        <a class="al-map" id="arrival-map-link" href="#" target="_blank">🗺 マップで開く</a>
       </div>
     </div>
 
+    <!-- 料金（±調整 + 手動入力） -->
     <div class="section">
-      <div class="section-title">💰 料金（編集可）</div>
+      <div class="section-title">💰 料金（調整可）</div>
       <div class="fare-big" id="fare-display">¥0</div>
-      <input type="number" class="fare-input" id="fare-edit" inputmode="numeric" placeholder="手動で調整">
+      <div class="adj-row">
+        <button class="adj-btn minus" data-adj="-500">－500</button>
+        <button class="adj-btn minus" data-adj="-100">－100</button>
+        <button class="adj-btn plus"  data-adj="+100">＋100</button>
+        <button class="adj-btn plus"  data-adj="+500">＋500</button>
+      </div>
+      <input type="number" class="fare-input" id="fare-edit" inputmode="numeric" placeholder="手動入力">
       <div style="font-size:11px;color:var(--muted);margin-top:8px">
         ※ 寄り道・経由など、自由に変更できます
       </div>
     </div>
 
+    <!-- 支払方法（2択） -->
     <div class="section">
-      <div class="section-title">💳 支払い方法</div>
+      <div class="section-title">💳 支払方法</div>
       <div class="radio-group" id="payment-group">
-        <div class="radio-btn active" data-pay="cash">💴 現金</div>
-        <div class="radio-btn" data-pay="card">💳 カード</div>
-        <div class="radio-btn" data-pay="paypay">📱 PayPay</div>
+        <div class="radio-btn active" data-pay="cash" style="flex:1;font-size:16px">💴 現金</div>
+        <div class="radio-btn" data-pay="cashless" style="flex:1;font-size:15px">💳 カード・PayPay等</div>
       </div>
     </div>
 
+    <!-- 備考 -->
     <div class="section">
       <div class="section-title">📝 備考（任意）</div>
       <textarea class="note-input" id="ride-notes" placeholder="コンビニ寄り道・友人経由など"></textarea>
@@ -636,16 +557,15 @@
   <button class="btn btn-gray btn-sm" id="btn-ride-back">← メインに戻る</button>
 </div>
 
-<!-- ========================================================
+<!-- ====================================================
      SCREEN 4: 退勤
-     ======================================================== -->
+     ==================================================== -->
 <div id="screen-endshift" class="screen">
   <header>
     <h1>🏁 退勤処理</h1>
     <p id="endshift-date"></p>
   </header>
 
-  <!-- 終業メーター -->
   <div class="section">
     <div class="section-title">🚙 終業メーター</div>
     <div class="input-row">
@@ -655,27 +575,17 @@
     <div id="mileage-result" style="text-align:center;padding:10px;font-size:17px;font-weight:700;color:var(--accent)"></div>
   </div>
 
-  <!-- 売上サマリー -->
-  <div class="section" id="endshift-summary-section">
+  <div class="section">
     <div class="section-title">📊 本日の売上</div>
     <div id="endshift-summary-rows"></div>
   </div>
 
-  <!-- 乗務記録テーブル -->
   <div class="section">
     <div class="section-title">📋 乗務記録一覧</div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>#</th>
-            <th>出発時刻</th>
-            <th>出発地</th>
-            <th>到着時刻</th>
-            <th>目的地</th>
-            <th>金額</th>
-            <th>支払</th>
-          </tr>
+          <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>金額</th><th>支払</th></tr>
         </thead>
         <tbody id="endshift-tbody"></tbody>
       </table>
@@ -688,13 +598,39 @@
 
 <script>
 // ============================================================
-// Supabase設定
+// Supabase
 // ============================================================
 const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 
 // ============================================================
-// 車両定義（社長画面で編集可能にする予定）
+// 石垣島 駐車場・スポット（マップ座標）
+// ============================================================
+const SPOTS = {
+  '730記念広場駐車場':           { lat: 24.3374, lng: 124.1565 },
+  '美崎町市営駐車場':             { lat: 24.3359, lng: 124.1575 },
+  '石垣港離島ターミナル':         { lat: 24.3370, lng: 124.1583 },
+  '八島町駐車場':                 { lat: 24.3400, lng: 124.1575 },
+  'ユーグレナモール周辺':         { lat: 24.3388, lng: 124.1568 },
+  'イオンタウン石垣駐車場':       { lat: 24.3254, lng: 124.1582 },
+  'マックスバリュ石垣店':         { lat: 24.3324, lng: 124.1527 },
+  'ドン・キホーテ石垣店':         { lat: 24.3412, lng: 124.1553 },
+  '南ぬ島石垣空港':               { lat: 24.3964, lng: 124.2433 },
+  'バンナ公園駐車場':             { lat: 24.3518, lng: 124.1595 },
+  '石垣市役所駐車場':             { lat: 24.3409, lng: 124.1551 },
+  '川平湾駐車場':                 { lat: 24.4521, lng: 124.1444 },
+  '白保海岸駐車場':               { lat: 24.3699, lng: 124.2249 },
+  '米原ビーチ駐車場':             { lat: 24.4395, lng: 124.1760 },
+  'フサキビーチ駐車場':           { lat: 24.3258, lng: 124.1106 },
+  '底地ビーチ駐車場':             { lat: 24.3758, lng: 124.1095 },
+  '石垣市中央運動公園':           { lat: 24.3476, lng: 124.1717 },
+  '石垣市公設市場':               { lat: 24.3393, lng: 124.1559 },
+  'あやぱにモール':               { lat: 24.3391, lng: 124.1554 },
+  'ANAインターコンチネンタル石垣リゾート': { lat: 24.3828, lng: 124.1421 },
+};
+
+// ============================================================
+// 車両定義
 // ============================================================
 const CARS = {
   A: { id: 'car_a', name: '車A', model: 'MRワゴン' },
@@ -706,21 +642,14 @@ const CARS = {
 // アプリ状態
 // ============================================================
 let state = {
-  screen: 'setup',
-  car: 'A',
-  driver1Name: '',
-  driver1Time: '20:00',
-  driver2Name: '',
-  driver2Time: '20:00',
-  weather: '晴れ',
-  startMeter: 0,
-  shiftId: null,
-  shiftDate: '',
-  rides: [],        // { seq, customer, departure, destination, depTime, arrTime, durationMin, distance, fare, payment, notes }
-  fareType: 'general'
+  screen: 'setup', car: 'A',
+  driver1Name: '', driver1Time: '20:00',
+  driver2Name: '', driver2Time: '20:00',
+  weather: '晴れ', startMeter: 0,
+  shiftId: null, shiftDate: '',
+  rides: [], fareType: 'general'
 };
 
-// ローカルストレージ
 function saveState() {
   try { localStorage.setItem('a1_shift', JSON.stringify(state)); } catch(e) {}
 }
@@ -731,11 +660,11 @@ function loadState() {
   } catch(e) {}
   return false;
 }
-function clearState() {
-  localStorage.removeItem('a1_shift');
-}
+function clearState() { localStorage.removeItem('a1_shift'); }
 
+// ============================================================
 // 日付ユーティリティ
+// ============================================================
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -754,23 +683,19 @@ function pad(n) { return String(n).padStart(2,'0'); }
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
-  state.screen = name;
-  window.scrollTo(0,0);
-  saveState();
+  state.screen = name; window.scrollTo(0,0); saveState();
 }
 
 // ============================================================
 // Supabase ヘルパー
 // ============================================================
-async function sbPost(path, body, prefer = 'return=representation') {
+async function sbPost(path, body, prefer) {
   try {
     const r = await fetch(SUPABASE_URL + path, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': prefer
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': prefer || 'return=representation'
       },
       body: JSON.stringify(body)
     });
@@ -784,10 +709,8 @@ async function sbPatch(path, body) {
     await fetch(SUPABASE_URL + path, {
       method: 'PATCH',
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
       },
       body: JSON.stringify(body)
     });
@@ -802,8 +725,6 @@ async function sbUpsert(path, body) {
 // ============================================================
 function initSetup() {
   document.getElementById('setup-date-label').textContent = todayJP();
-
-  // 車両カード
   document.querySelectorAll('#setup-car-cards .car-card').forEach(card => {
     card.addEventListener('click', function() {
       document.querySelectorAll('#setup-car-cards .car-card').forEach(c => c.classList.remove('active'));
@@ -811,8 +732,6 @@ function initSetup() {
       state.car = this.dataset.car;
     });
   });
-
-  // 天候
   document.querySelectorAll('#weather-group .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('#weather-group .radio-btn').forEach(b => b.classList.remove('active'));
@@ -820,8 +739,6 @@ function initSetup() {
       state.weather = this.dataset.weather;
     });
   });
-
-  // おつりチェック
   document.querySelectorAll('.ck-box').forEach(ck => {
     ck.addEventListener('click', function() {
       this.classList.toggle('on');
@@ -830,11 +747,8 @@ function initSetup() {
     });
   });
   refreshChangeTotals();
-
-  // 始業開始
   document.getElementById('btn-start-shift').addEventListener('click', startShift);
 }
-
 function refreshChangeTotals() {
   let total = 0;
   document.querySelectorAll('.ck-box.on').forEach(ck => { total += parseInt(ck.dataset.val); });
@@ -842,13 +756,11 @@ function refreshChangeTotals() {
   el.textContent = `¥${total.toLocaleString()} / ¥15,000`;
   el.className = 'change-total ' + (total >= 15000 ? 'ok' : 'ng');
 }
-
 async function startShift() {
   const d1 = document.getElementById('driver1-name').value;
   const d2 = document.getElementById('driver2-name').value;
   if (!d1) { alert('担当者1（2種メンバー）を選択してください'); return; }
   if (!d2) { alert('担当者2（随行メンバー）を選択してください'); return; }
-
   state.driver1Name = d1;
   state.driver1Time = document.getElementById('driver1-time').value;
   state.driver2Name = d2;
@@ -857,23 +769,14 @@ async function startShift() {
   state.shiftDate   = todayISO();
   state.rides       = [];
   state.shiftId     = null;
-
-  // Supabase: shifts テーブルに登録
   const row = await sbPost('/rest/v1/shifts', {
-    car_id:           CARS[state.car].id,
-    car_name:         CARS[state.car].name,
-    car_model:        CARS[state.car].model,
-    driver1_name:     state.driver1Name,
-    driver1_start:    state.driver1Time,
-    driver2_name:     state.driver2Name,
-    driver2_start:    state.driver2Time,
-    weather:          state.weather,
-    start_meter:      state.startMeter,
-    date:             state.shiftDate,
-    status:           'active'
+    car_id: CARS[state.car].id, car_name: CARS[state.car].name, car_model: CARS[state.car].model,
+    driver1_name: state.driver1Name, driver1_start: state.driver1Time,
+    driver2_name: state.driver2Name, driver2_start: state.driver2Time,
+    weather: state.weather, start_meter: state.startMeter,
+    date: state.shiftDate, status: 'active'
   });
   if (row && row[0]) state.shiftId = row[0].id;
-
   saveState();
   showScreen('main');
   renderMain();
@@ -884,37 +787,44 @@ async function startShift() {
 // ============================================================
 function renderMain() {
   const car = CARS[state.car];
-  document.getElementById('main-title').textContent =
-    `🚗 車${state.car}（${car.model}）`;
+  document.getElementById('main-title').textContent = `🚗 車${state.car}（${car.model}）`;
   document.getElementById('main-sub').textContent =
     `${state.driver1Name} / ${state.driver2Name}　${state.weather}　${todayJP()}`;
-
   renderRideTable();
   renderTotals();
 }
-
 function renderRideTable() {
-  const tbody = document.getElementById('ride-tbody');
-  const noRow = document.getElementById('no-ride-row');
-
+  const tbody  = document.getElementById('ride-tbody');
+  const noRow  = document.getElementById('no-ride-row');
   if (state.rides.length === 0) {
-    tbody.innerHTML = '';
-    tbody.appendChild(noRow);
-    noRow.classList.remove('hidden');
-    return;
+    tbody.innerHTML = ''; tbody.appendChild(noRow); noRow.classList.remove('hidden'); return;
   }
   noRow.classList.add('hidden');
   tbody.innerHTML = state.rides.map((r, i) => {
-    const payClass = r.payment === 'cash' ? 'pay-cash' : r.payment === 'card' ? 'pay-card' : 'pay-paypay';
-    const payLabel = r.payment === 'cash' ? '現金' : r.payment === 'card' ? 'カード' : 'PayPay';
+    const payClass = r.payment === 'cash' ? 'pay-cash' : 'pay-cashless';
+    const payLabel = r.payment === 'cash' ? '現金' : 'カード等';
     const distStr  = r.distance > 0 ? r.distance.toFixed(1)+'km' : '—';
     const durStr   = r.durationMin > 0 ? r.durationMin+'分' : '—';
+    // 出発地マップリンク
+    const spot = SPOTS[r.departure];
+    const depUrl = spot
+      ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.departure||''))}`;
+    const depCell = r.departure
+      ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
+    // 到着地マップリンク（GPS座標があれば使う）
+    const destUrl = r.arrivalLat
+      ? `https://maps.google.com/?q=${r.arrivalLat},${r.arrivalLng}`
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.arrivalPlace||r.destination||''))}`;
+    const destLabel = r.arrivalPlace || r.destination || '—';
+    const destCell  = destLabel !== '—'
+      ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
     return `<tr>
       <td>${i+1}</td>
       <td>${r.depTime||'—'}</td>
-      <td style="text-align:left;font-size:11px;max-width:70px;overflow:hidden;white-space:nowrap">${r.departure||'—'}</td>
+      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${depCell}</td>
       <td>${r.arrTime||'—'}</td>
-      <td style="text-align:left;font-size:11px;max-width:70px;overflow:hidden;white-space:nowrap">${r.destination||'—'}</td>
+      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${destCell}</td>
       <td>${durStr}</td>
       <td>${distStr}</td>
       <td style="font-weight:700">¥${r.fare.toLocaleString()}</td>
@@ -922,40 +832,33 @@ function renderRideTable() {
     </tr>`;
   }).join('');
 }
-
 function renderTotals() {
-  let allTotal = 0, cashTotal = 0, nonCash = 0;
+  let allTotal = 0, cashTotal = 0, cashlessTotal = 0;
   state.rides.forEach(r => {
     allTotal += r.fare;
     if (r.payment === 'cash') cashTotal += r.fare;
-    else nonCash += r.fare;
+    else cashlessTotal += r.fare;
   });
-  document.getElementById('total-all').textContent  = `¥${allTotal.toLocaleString()}`;
-  document.getElementById('total-cash').textContent = `¥${cashTotal.toLocaleString()}`;
-  document.getElementById('total-card').textContent = `¥${nonCash.toLocaleString()}`;
-  document.getElementById('total-comm').textContent = `¥${Math.floor(allTotal*0.3).toLocaleString()}`;
+  document.getElementById('total-all').textContent      = `¥${allTotal.toLocaleString()}`;
+  document.getElementById('total-cash').textContent     = `¥${cashTotal.toLocaleString()}`;
+  document.getElementById('total-cashless').textContent = `¥${cashlessTotal.toLocaleString()}`;
+  document.getElementById('total-comm').textContent     = `¥${Math.floor(allTotal*0.3).toLocaleString()}`;
 }
 
 // ============================================================
-// 代行中
+// 代行中（GPS + 計測）
 // ============================================================
-let gpsWatchId = null;
-let rideTimer  = null;
+let gpsWatchId = null, rideTimer = null;
 let rideStartTime = null;
-let rideDist   = 0;
-let rideLastPos = null;
-let rideFare   = 0;
-let ridePayment = 'cash';
-let rideFareType = 'general';
+let rideDist = 0, rideLastPos = null;
+let rideCurrentLat = null, rideCurrentLng = null;
+let rideFare = 0, ridePayment = 'cash', rideFareType = 'general';
 
 function startNewRide() {
-  // リセット
-  rideDist     = 0;
-  rideLastPos  = null;
-  rideStartTime = null;
-  rideFare     = 0;
-  ridePayment  = 'cash';
-  rideFareType = state.fareType || 'general';
+  rideDist = 0; rideLastPos = null;
+  rideCurrentLat = null; rideCurrentLng = null;
+  rideStartTime = null; rideFare = 0;
+  ridePayment = 'cash'; rideFareType = state.fareType || 'general';
 
   const seq = state.rides.length + 1;
   document.getElementById('ride-title').textContent = `🚗 代行 #${seq}`;
@@ -963,147 +866,131 @@ function startNewRide() {
     `車${state.car} | ${state.driver1Name} / ${state.driver2Name}`;
 
   // フォームリセット
-  document.getElementById('ride-customer').value    = '';
-  document.getElementById('ride-departure').value   = '';
-  document.getElementById('ride-destination').value = '';
-  document.getElementById('ride-destination2').value= '';
-  document.getElementById('ride-notes').value       = '';
-  document.getElementById('fare-edit').value        = '';
+  ['ride-customer','ride-departure','ride-destination','ride-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fare-edit').value = '';
   document.getElementById('fare-display').textContent = '¥0';
+  document.getElementById('live-fare').textContent = '¥0';
   document.getElementById('ride-dist-val').innerHTML = '0.00<span class="mu">km</span>';
   document.getElementById('ride-elapsed').innerHTML  = '00:00<span class="mu"></span>';
   document.getElementById('gps-dot').classList.add('on');
-  document.getElementById('gps-text').textContent   = 'GPS: 待機中';
+  document.getElementById('gps-text').textContent = 'GPS: 待機中';
 
   // 料金タイプ初期化
-  document.querySelectorAll('#fare-type-group .radio-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.faretype === rideFareType);
-  });
-  // 支払方法初期化
+  syncFareTypeBtns('fare-type-group',   'faretype',  rideFareType);
+  syncFareTypeBtns('fare-type-driving', 'faretype2', rideFareType);
+  // 支払初期化
   document.querySelectorAll('#payment-group .radio-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.pay === 'cash');
   });
 
-  // セクション表示制御
   document.getElementById('section-pre-depart').classList.remove('hidden');
+  document.getElementById('fare-type-section').classList.remove('hidden');
   document.getElementById('section-driving').classList.add('hidden');
   document.getElementById('section-arrived').classList.add('hidden');
-  document.getElementById('fare-type-section').classList.remove('hidden');
-
   showScreen('ride');
+}
+
+function syncFareTypeBtns(groupId, attr, val) {
+  document.querySelectorAll(`#${groupId} .radio-btn`).forEach(b => {
+    b.classList.toggle('active', b.dataset[attr] === val);
+  });
 }
 
 function doDepart() {
   rideStartTime = new Date();
-  const timeStr = nowTime();
-
   document.getElementById('ride-title').textContent =
-    `🚗 代行 #${state.rides.length+1}　${timeStr} 出発`;
-
+    `🚗 代行 #${state.rides.length+1}　${nowTime()} 出発`;
   document.getElementById('section-pre-depart').classList.add('hidden');
   document.getElementById('fare-type-section').classList.add('hidden');
   document.getElementById('section-driving').classList.remove('hidden');
+  syncFareTypeBtns('fare-type-driving', 'faretype2', rideFareType);
 
-  // GPS開始
   if (navigator.geolocation) {
     gpsWatchId = navigator.geolocation.watchPosition(onGpsPos, onGpsErr, {
-      enableHighAccuracy: true,
-      maximumAge: 3000,
-      timeout: 15000
+      enableHighAccuracy: true, maximumAge: 3000, timeout: 15000
     });
   } else {
     document.getElementById('gps-text').textContent = 'GPS非対応ブラウザ';
     document.getElementById('gps-dot').classList.remove('on');
   }
-
-  // 経過タイマー
   rideTimer = setInterval(() => {
     if (!rideStartTime) return;
     const sec = Math.floor((new Date() - rideStartTime) / 1000);
-    const m = Math.floor(sec / 60), s = sec % 60;
     document.getElementById('ride-elapsed').innerHTML =
-      `${pad(m)}:${pad(s)}<span class="mu"></span>`;
+      `${pad(Math.floor(sec/60))}:${pad(sec%60)}<span class="mu"></span>`;
   }, 1000);
-
-  // Supabase: 出発ステータス送信
   pushVehicle('departing');
 }
 
-function doArrive() {
-  const arrTime = new Date();
-  const arrStr  = nowTime();
-  const durMin  = rideStartTime ? Math.floor((arrTime - rideStartTime) / 60000) : 0;
+async function doArrive() {
+  const arrTime  = new Date();
+  const arrStr   = nowTime();
+  const durMin   = rideStartTime ? Math.floor((arrTime - rideStartTime) / 60000) : 0;
 
-  // GPS・タイマー停止
   if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
-  if (rideTimer) { clearInterval(rideTimer); rideTimer = null; }
+  if (rideTimer)           { clearInterval(rideTimer); rideTimer = null; }
   document.getElementById('gps-dot').classList.remove('on');
   document.getElementById('gps-text').textContent = `計測完了（${rideDist.toFixed(2)}km）`;
 
-  // 料金計算
   rideFare = calcFare(rideDist, rideFareType);
   document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
   document.getElementById('fare-edit').value = rideFare;
 
-  // 目的地を引き継ぐ
-  const dest1 = document.getElementById('ride-destination').value;
-  document.getElementById('ride-destination2').value = dest1;
+  // 到着地の逆ジオコーディング
+  let arrivalPlace = '', arrivalAddr = '', arrivalLat = null, arrivalLng = null;
+  if (rideCurrentLat) {
+    arrivalLat = rideCurrentLat; arrivalLng = rideCurrentLng;
+    const geo = await reverseGeocode(rideCurrentLat, rideCurrentLng);
+    if (geo) { arrivalPlace = geo.short; arrivalAddr = geo.full; }
+  }
+  document.getElementById('arrival-place-name').textContent = arrivalPlace || '（住所取得できませんでした）';
+  document.getElementById('arrival-full-addr').textContent  = arrivalAddr;
+  const mapUrl = arrivalLat
+    ? `https://maps.google.com/?q=${arrivalLat},${arrivalLng}`
+    : `https://maps.google.com/?q=${encodeURIComponent('石垣島')}`;
+  document.getElementById('arrival-map-link').href = mapUrl;
 
-  // 到着時刻を保存
-  document.getElementById('section-driving').classList.add('hidden');
-  document.getElementById('section-arrived').classList.remove('hidden');
-
-  // stateに一時保存
   state._tmpRide = {
-    seq:          state.rides.length + 1,
-    depTime:      rideStartTime ? rideStartTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '',
-    arrTime:      arrStr,
-    durationMin:  durMin,
-    distance:     rideDist
+    seq: state.rides.length + 1,
+    depTime:     rideStartTime ? rideStartTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '',
+    arrTime:     arrStr,
+    durationMin: durMin,
+    distance:    rideDist,
+    arrivalPlace, arrivalLat, arrivalLng
   };
 
-  // Supabase: 待機に戻す
+  document.getElementById('section-driving').classList.add('hidden');
+  document.getElementById('section-arrived').classList.remove('hidden');
   pushVehicle('waiting');
 }
 
 function doCompleteRide() {
   const fareVal   = parseInt(document.getElementById('fare-edit').value) || rideFare;
-  const dest      = document.getElementById('ride-destination2').value
-                    || document.getElementById('ride-destination').value;
   const notes     = document.getElementById('ride-notes').value;
   const customer  = document.getElementById('ride-customer').value;
   const departure = document.getElementById('ride-departure').value;
+  const destination = document.getElementById('ride-destination').value;
 
   const ride = {
-    ...state._tmpRide,
-    customer,
-    departure,
-    destination: dest,
-    fare:        fareVal,
-    payment:     ridePayment,
-    notes
+    ...state._tmpRide, customer, departure, destination,
+    fare: fareVal, payment: ridePayment, notes
   };
   state.rides.push(ride);
   state._tmpRide = null;
   saveState();
 
-  // Supabase: rides テーブルに記録
   sbPost('/rest/v1/rides', {
-    shift_id:      state.shiftId || null,
-    car_id:        CARS[state.car].id,
-    seq_num:       ride.seq,
-    customer_name: ride.customer,
-    departure:     ride.departure,
-    destination:   ride.destination,
-    departure_time:ride.depTime,
-    arrival_time:  ride.arrTime,
-    duration_min:  ride.durationMin,
-    distance:      ride.distance,
-    fare:          ride.fare,
-    payment_type:  ride.payment,
-    notes:         ride.notes,
-    fare_type:     rideFareType,
-    date:          state.shiftDate || todayISO()
+    shift_id: state.shiftId || null,
+    car_id: CARS[state.car].id, seq_num: ride.seq,
+    customer_name: ride.customer, departure: ride.departure,
+    destination: ride.destination, departure_time: ride.depTime,
+    arrival_time: ride.arrTime, duration_min: ride.durationMin,
+    distance: ride.distance, fare: ride.fare, fare_type: rideFareType,
+    payment_type: ride.payment, notes: ride.notes,
+    arrival_place: ride.arrivalPlace, arrival_lat: ride.arrivalLat, arrival_lng: ride.arrivalLng,
+    date: state.shiftDate || todayISO()
   }, 'return=minimal').catch(()=>{});
 
   showScreen('main');
@@ -1113,6 +1000,7 @@ function doCompleteRide() {
 // GPS コールバック
 function onGpsPos(pos) {
   const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+  rideCurrentLat = lat; rideCurrentLng = lng;
   document.getElementById('gps-text').textContent = `GPS: 計測中（精度 ±${Math.round(acc)}m）`;
   if (rideLastPos) {
     const d = haversine(rideLastPos.lat, rideLastPos.lng, lat, lng);
@@ -1121,6 +1009,7 @@ function onGpsPos(pos) {
       rideFare  = calcFare(rideDist, rideFareType);
       document.getElementById('ride-dist-val').innerHTML =
         `${rideDist.toFixed(2)}<span class="mu">km</span>`;
+      document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
     }
   }
   rideLastPos = { lat, lng };
@@ -1128,8 +1017,22 @@ function onGpsPos(pos) {
 }
 function onGpsErr(err) {
   document.getElementById('gps-dot').classList.remove('on');
-  const msgs = { 1:'GPS許可が必要です', 2:'GPS信号なし', 3:'GPSタイムアウト' };
+  const msgs = {1:'GPS許可が必要です',2:'GPS信号なし',3:'GPSタイムアウト'};
   document.getElementById('gps-text').textContent = msgs[err.code] || 'GPSエラー';
+}
+
+// 逆ジオコーディング（OpenStreetMap Nominatim）
+async function reverseGeocode(lat, lng) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ja`;
+    const r = await fetch(url, { headers: { 'User-Agent': 'A1DrivingService/1.0' } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const addr = data.address || {};
+    const short = addr.neighbourhood || addr.suburb || addr.city_district
+                  || addr.town || addr.village || addr.road || '';
+    return { short: short || data.display_name?.split(',')[0] || '', full: data.display_name || '' };
+  } catch(e) { return null; }
 }
 
 // ============================================================
@@ -1137,100 +1040,55 @@ function onGpsErr(err) {
 // ============================================================
 function initEndShift() {
   document.getElementById('endshift-date').textContent = todayJP();
-
-  // メーター入力 → 走行距離
+  document.getElementById('end-meter').value = '';
+  document.getElementById('mileage-result').textContent = '';
   document.getElementById('end-meter').addEventListener('input', function() {
-    const end = parseInt(this.value) || 0;
-    const diff = end - (state.startMeter || 0);
+    const diff = (parseInt(this.value) || 0) - (state.startMeter || 0);
     document.getElementById('mileage-result').textContent =
       diff > 0 ? `本日走行距離：${diff.toLocaleString()} km` : '';
   });
-
-  // サマリー
   const rides = state.rides;
-  let cash = 0, card = 0, paypay = 0;
-  rides.forEach(r => {
-    if (r.payment === 'cash') cash += r.fare;
-    else if (r.payment === 'card') card += r.fare;
-    else paypay += r.fare;
-  });
-  const total = cash + card + paypay;
-  const comm  = Math.floor(total * 0.3);
-
+  let cash = 0, cashless = 0;
+  rides.forEach(r => { r.payment === 'cash' ? cash += r.fare : cashless += r.fare; });
+  const total = cash + cashless;
   document.getElementById('endshift-summary-rows').innerHTML = `
-    <div class="summary-row">
-      <span class="sr-label">💴 現金</span>
-      <span class="sr-val" style="color:var(--green)">¥${cash.toLocaleString()}</span>
-    </div>
-    <div class="summary-row">
-      <span class="sr-label">💳 カード</span>
-      <span class="sr-val" style="color:var(--accent)">¥${card.toLocaleString()}</span>
-    </div>
-    <div class="summary-row">
-      <span class="sr-label">📱 PayPay</span>
-      <span class="sr-val" style="color:var(--red)">¥${paypay.toLocaleString()}</span>
-    </div>
-    <div class="summary-row total">
-      <span class="sr-label">売上合計</span>
-      <span class="sr-val">¥${total.toLocaleString()}</span>
-    </div>
-    <div class="summary-row commission">
-      <span class="sr-label">歩合（30%）</span>
-      <span class="sr-val">¥${comm.toLocaleString()}</span>
-    </div>
-    <div class="summary-row">
-      <span class="sr-label">乗務回数</span>
-      <span class="sr-val">${rides.length} 回</span>
-    </div>
+    <div class="summary-row"><span class="sr-label">💴 現金</span><span class="sr-val" style="color:var(--green)">¥${cash.toLocaleString()}</span></div>
+    <div class="summary-row"><span class="sr-label">💳 カード・PayPay等</span><span class="sr-val" style="color:var(--accent)">¥${cashless.toLocaleString()}</span></div>
+    <div class="summary-row total"><span class="sr-label">売上合計</span><span class="sr-val">¥${total.toLocaleString()}</span></div>
+    <div class="summary-row commission"><span class="sr-label">歩合（30%）</span><span class="sr-val">¥${Math.floor(total*0.3).toLocaleString()}</span></div>
+    <div class="summary-row"><span class="sr-label">乗務回数</span><span class="sr-val">${rides.length} 回</span></div>
   `;
-
-  // テーブル
-  document.getElementById('endshift-tbody').innerHTML = rides.map((r, i) => {
-    const payLabel = r.payment === 'cash' ? '現金' : r.payment === 'card' ? 'カード' : 'PayPay';
+  document.getElementById('endshift-tbody').innerHTML = rides.map((r,i) => {
+    const payLabel = r.payment === 'cash' ? '現金' : 'カード等';
     return `<tr>
       <td>${i+1}</td>
       <td>${r.depTime||'—'}</td>
       <td style="text-align:left;font-size:11px">${r.departure||'—'}</td>
       <td>${r.arrTime||'—'}</td>
-      <td style="text-align:left;font-size:11px">${r.destination||'—'}</td>
+      <td style="text-align:left;font-size:11px">${r.arrivalPlace||r.destination||'—'}</td>
       <td style="font-weight:700">¥${r.fare.toLocaleString()}</td>
       <td>${payLabel}</td>
     </tr>`;
   }).join('');
 }
-
 async function confirmEndShift() {
   const endMeter = parseInt(document.getElementById('end-meter').value) || 0;
   const rides = state.rides;
-  let cash = 0, card = 0, paypay = 0;
-  rides.forEach(r => {
-    if (r.payment === 'cash') cash += r.fare;
-    else if (r.payment === 'card') card += r.fare;
-    else paypay += r.fare;
-  });
-
+  let cash = 0, cashless = 0;
+  rides.forEach(r => { r.payment === 'cash' ? cash += r.fare : cashless += r.fare; });
   if (state.shiftId) {
     await sbPatch(`/rest/v1/shifts?id=eq.${state.shiftId}`, {
-      end_meter:    endMeter,
-      end_time:     nowTime(),
-      status:       'ended',
-      total_cash:   cash,
-      total_card:   card,
-      total_paypay: paypay
+      end_meter: endMeter, end_time: nowTime(), status: 'ended',
+      total_cash: cash, total_card: cashless
     });
   }
   await pushVehicle('waiting');
-
   clearState();
   alert('お疲れさまでした！退勤処理が完了しました。');
-
-  // 初期化して始業画面へ
   state = {
-    screen: 'setup', car: 'A',
-    driver1Name:'', driver1Time:'20:00',
-    driver2Name:'', driver2Time:'20:00',
-    weather:'晴れ', startMeter:0,
-    shiftId:null, shiftDate:'', rides:[], fareType:'general'
+    screen:'setup', car:'A', driver1Name:'', driver1Time:'20:00',
+    driver2Name:'', driver2Time:'20:00', weather:'晴れ',
+    startMeter:0, shiftId:null, shiftDate:'', rides:[], fareType:'general'
   };
   showScreen('setup');
 }
@@ -1243,7 +1101,6 @@ function calcFare(km, type) {
     if (km < 2) return 1400;
     return 1400 + (Math.floor(km) - 1) * 200;
   }
-  // 一般
   const k = Math.floor(km);
   if (km < 5)  return 1900 + k * 200;
   if (km < 21) return 3000 + (k - 5) * 300;
@@ -1253,80 +1110,74 @@ function calcFare(km, type) {
 // ============================================================
 // Haversine
 // ============================================================
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function haversine(lat1,lon1,lat2,lon2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
 // ============================================================
 // Supabase: vehicle 更新
 // ============================================================
 async function pushVehicle(status) {
-  const carId = CARS[state.car].id;
   await sbUpsert('/rest/v1/vehicles', {
-    id: carId,
-    vehicle_name: CARS[state.car].name,
-    status,
-    distance: rideDist || 0,
-    fare:     rideFare || 0,
-    customer_name: (document.getElementById('ride-customer')?.value || ''),
-    departure:     (document.getElementById('ride-departure')?.value || ''),
-    destination:   (document.getElementById('ride-destination2')?.value
-                    || document.getElementById('ride-destination')?.value || ''),
+    id: CARS[state.car].id, vehicle_name: CARS[state.car].name, status,
+    distance: rideDist||0, fare: rideFare||0,
+    customer_name: document.getElementById('ride-customer')?.value||'',
+    departure:     document.getElementById('ride-departure')?.value||'',
+    destination:   document.getElementById('ride-destination')?.value||'',
     updated_at: new Date().toISOString()
   });
 }
-async function pushVehicleLocation(lat, lng) {
-  const carId = CARS[state.car].id;
+async function pushVehicleLocation(lat,lng) {
   await sbUpsert('/rest/v1/vehicles', {
-    id: carId,
-    vehicle_name: CARS[state.car].name,
-    lat, lng,
-    status: 'driving',
-    distance: rideDist || 0,
-    fare: rideFare || 0,
+    id: CARS[state.car].id, vehicle_name: CARS[state.car].name,
+    lat, lng, status: 'driving', distance: rideDist||0, fare: rideFare||0,
     updated_at: new Date().toISOString()
   });
 }
 
 // ============================================================
-// DOMContentLoaded：全イベントリスナー
+// DOMContentLoaded
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-
-  // ─── 始業画面
   initSetup();
 
-  // ─── メイン画面
+  // ── メイン画面
   document.getElementById('btn-new-ride').addEventListener('click', startNewRide);
   document.getElementById('btn-go-endshift').addEventListener('click', () => {
-    initEndShift();
-    showScreen('endshift');
+    initEndShift(); showScreen('endshift');
   });
 
-  // ─── 代行画面
+  // ── 代行画面
   document.getElementById('btn-depart').addEventListener('click', doDepart);
   document.getElementById('btn-arrive').addEventListener('click', doArrive);
   document.getElementById('btn-complete').addEventListener('click', doCompleteRide);
   document.getElementById('btn-ride-back').addEventListener('click', () => {
     if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
     if (rideTimer) { clearInterval(rideTimer); rideTimer = null; }
-    showScreen('main');
-    renderMain();
+    showScreen('main'); renderMain();
   });
 
-  // 料金タイプ
+  // 料金タイプ（出発前）
   document.querySelectorAll('#fare-type-group .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('#fare-type-group .radio-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
+      syncFareTypeBtns('fare-type-group', 'faretype', this.dataset.faretype);
       rideFareType = this.dataset.faretype;
       state.fareType = rideFareType;
+    });
+  });
+
+  // 料金タイプ（走行中 - リアルタイム再計算）
+  document.querySelectorAll('#fare-type-driving .radio-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      syncFareTypeBtns('fare-type-driving', 'faretype2', this.dataset.faretype2);
+      rideFareType = this.dataset.faretype2;
+      state.fareType = rideFareType;
+      // 即時再計算
+      rideFare = calcFare(rideDist, rideFareType);
+      document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
     });
   });
 
@@ -1339,21 +1190,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // 料金手動編集
-  document.getElementById('fare-edit').addEventListener('input', function() {
-    const v = parseInt(this.value) || 0;
-    document.getElementById('fare-display').textContent = `¥${v.toLocaleString()}`;
-    rideFare = v;
+  // 料金 ±ボタン
+  document.querySelectorAll('.adj-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const delta = parseInt(this.dataset.adj);
+      rideFare = Math.max(0, rideFare + delta);
+      document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
+      document.getElementById('fare-edit').value = rideFare;
+    });
   });
 
-  // ─── 退勤画面
+  // 料金手動入力
+  document.getElementById('fare-edit').addEventListener('input', function() {
+    rideFare = parseInt(this.value) || 0;
+    document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
+  });
+
+  // 出発地マップボタン
+  document.getElementById('dep-map-btn').addEventListener('click', () => {
+    const name = document.getElementById('ride-departure').value.trim();
+    if (!name) { alert('出発地を入力してください'); return; }
+    const spot = SPOTS[name];
+    const url = spot
+      ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + name)}`;
+    window.open(url, '_blank');
+  });
+
+  // ── 退勤画面
   document.getElementById('btn-confirm-end').addEventListener('click', confirmEndShift);
   document.getElementById('btn-end-back').addEventListener('click', () => {
-    showScreen('main');
-    renderMain();
+    showScreen('main'); renderMain();
   });
 
-  // ─── LocalStorageから復元
+  // ── LocalStorage復元
   const restored = loadState();
   if (restored && state.screen && state.screen !== 'setup') {
     showScreen(state.screen);
@@ -1361,7 +1231,6 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     showScreen('setup');
   }
-
 });
 </script>
 </body>

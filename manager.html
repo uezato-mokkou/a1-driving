@@ -128,6 +128,47 @@
 
     .updated { font-size: 10px; color: var(--muted); text-align: right; margin-top: 4px; }
 
+    /* 乗務記録テーブル */
+    .rides-panel {
+      background: var(--bg);
+      padding: 8px;
+      flex-shrink: 0;
+    }
+    .rides-title {
+      font-size: 11px; color: var(--muted); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 4px 8px 8px;
+    }
+    .rides-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+    .rides-tab {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      cursor: pointer; border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); touch-action: manipulation;
+    }
+    .rides-tab.active-a { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,.15); }
+    .rides-tab.active-b { border-color: #a855f7; color: #a855f7; background: rgba(168,85,247,.15); }
+    .rides-tab.active-c { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,.15); }
+    .rides-wrap { overflow-x: auto; }
+    .rides-wrap table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .rides-wrap th {
+      background: var(--card); padding: 5px 6px; text-align: center;
+      color: var(--muted); font-weight: 600; white-space: nowrap;
+    }
+    .rides-wrap td {
+      padding: 7px 6px; border-bottom: 1px solid var(--border);
+      text-align: center; vertical-align: middle; color: var(--text);
+    }
+    .rides-wrap tr:last-child td { border-bottom: none; }
+    .rides-wrap td a { color: var(--accent); text-decoration: none; }
+    .pay-cash     { color: var(--green); font-weight: 700; }
+    .pay-cashless { color: #a855f7; font-weight: 700; }
+    .rides-total {
+      display: flex; gap: 8px; padding: 6px 4px;
+      font-size: 12px; border-top: 1px solid var(--border); margin-top: 4px;
+    }
+    .rides-total span { color: var(--muted); }
+    .rides-total b { color: var(--text); }
+
     /* Leafletカスタムアイコン */
     .car-marker {
       display: flex;
@@ -214,6 +255,32 @@
     <button class="btn-line" style="margin-top:8px" onclick="sendLine('B')" id="line-btn-b">
       📱 車Bにテンプレ配車
     </button>
+  </div>
+</div>
+
+<!-- 乗務記録パネル -->
+<div class="rides-panel">
+  <div class="rides-title">📋 本日の乗務記録</div>
+  <div class="rides-tabs">
+    <div class="rides-tab active-a" id="rtab-a" data-car="car_a">🚗 車A</div>
+    <div class="rides-tab" id="rtab-b" data-car="car_b">🚗 車B</div>
+    <div class="rides-tab" id="rtab-c" data-car="car_c">🚗 車C</div>
+  </div>
+  <div class="rides-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th></tr>
+      </thead>
+      <tbody id="rides-tbody">
+        <tr><td colspan="9" style="color:var(--muted);padding:16px">記録なし</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="rides-total" id="rides-total" style="display:none">
+    <span>合計：</span><b id="rt-total">¥0</b>
+    &nbsp;|&nbsp;<span>現金：</span><b id="rt-cash" style="color:var(--green)">¥0</b>
+    &nbsp;|&nbsp;<span>カード等：</span><b id="rt-cashless" style="color:#a855f7">¥0</b>
+    &nbsp;|&nbsp;<span>歩合30%：</span><b id="rt-comm" style="color:var(--yellow)">¥0</b>
   </div>
 </div>
 
@@ -361,9 +428,94 @@ async function fetchVehicles() {
   }
 }
 
+// ================================================
+// 乗務記録フェッチ
+// ================================================
+let activeRideTab = 'car_a';
+const todayStr = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'})
+  .replace(/\//g,'-');
+// ISO形式に変換
+const todayISO = (() => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd= String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+})();
+
+async function fetchTodayRides(carId) {
+  try {
+    const url = SUPABASE_URL + `/rest/v1/rides?car_id=eq.${carId}&date=eq.${todayISO}&order=created_at.asc`;
+    const res = await fetch(url, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderRidesTable(data);
+  } catch(e) {}
+}
+
+function renderRidesTable(rides) {
+  const tbody = document.getElementById('rides-tbody');
+  const totalEl = document.getElementById('rides-total');
+  if (!rides || rides.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:16px">記録なし</td></tr>';
+    totalEl.style.display = 'none';
+    return;
+  }
+  let total = 0, cash = 0, cashless = 0;
+  tbody.innerHTML = rides.map((r, i) => {
+    const fare = r.fare || 0;
+    total += fare;
+    if (r.payment_type === 'cash') cash += fare; else cashless += fare;
+    const payClass = r.payment_type === 'cash' ? 'pay-cash' : 'pay-cashless';
+    const payLabel = r.payment_type === 'cash' ? '現金' : 'カード等';
+    const dist = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
+    const dur  = r.duration_min > 0 ? r.duration_min+'分' : '—';
+    const destLabel = r.arrival_place || r.destination || '—';
+    const destUrl   = (r.arrival_lat && r.arrival_lng)
+      ? `https://maps.google.com/?q=${r.arrival_lat},${r.arrival_lng}`
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||''))}`;
+    const destCell = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${r.departure_time||'—'}</td>
+      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${r.departure||'—'}</td>
+      <td>${r.arrival_time||'—'}</td>
+      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${destCell}</td>
+      <td>${dur}</td><td>${dist}</td>
+      <td style="font-weight:700">¥${fare.toLocaleString()}</td>
+      <td class="${payClass}">${payLabel}</td>
+    </tr>`;
+  }).join('');
+  totalEl.style.display = 'flex';
+  document.getElementById('rt-total').textContent    = '¥'+total.toLocaleString();
+  document.getElementById('rt-cash').textContent     = '¥'+cash.toLocaleString();
+  document.getElementById('rt-cashless').textContent = '¥'+cashless.toLocaleString();
+  document.getElementById('rt-comm').textContent     = '¥'+Math.floor(total*0.3).toLocaleString();
+}
+
+// タブ切り替え
+document.querySelectorAll('.rides-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.rides-tab').forEach(t => {
+      t.className = 'rides-tab';
+    });
+    const car = this.dataset.car;
+    const suffix = car.slice(-1); // 'a','b','c'
+    this.classList.add(`active-${suffix}`);
+    activeRideTab = car;
+    fetchTodayRides(car);
+  });
+});
+
 // 初回取得 + 5秒ごとに自動更新
 fetchVehicles();
-setInterval(fetchVehicles, 5000);
+fetchTodayRides(activeRideTab);
+setInterval(() => {
+  fetchVehicles();
+  fetchTodayRides(activeRideTab);
+}, 5000);
 </script>
 </body>
 </html>
