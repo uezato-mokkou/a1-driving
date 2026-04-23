@@ -423,29 +423,39 @@
     </div>
     <!-- 石垣島 駐車場・スポット datalist -->
     <datalist id="departure-list">
-      <option value="730記念広場駐車場">
-      <option value="美崎町市営駐車場">
-      <option value="石垣港離島ターミナル">
-      <option value="八島町駐車場">
-      <option value="ユーグレナモール周辺">
-      <option value="イオンタウン石垣駐車場">
-      <option value="マックスバリュ石垣店">
-      <option value="ドン・キホーテ石垣店">
+      <option value="蔵元駐車場">
+      <option value="石垣港離島ターミナル第1駐車場">
+      <option value="堤防駐車場">
+      <option value="八島第2駐車場">
+      <option value="石垣島離島ターミナル第2臨時駐車場">
+      <option value="石垣港離島ターミナル第2駐車場">
+      <option value="大川有料駐車場">
+      <option value="まるくに駐車場">
+      <option value="Dパーキング石垣市大川第一">
+      <option value="OGLパーキング">
+      <option value="タケトミタウンパーキング">
+      <option value="アイランドパーキング20石垣島">
+      <option value="akkipa登野城駐車場">
+      <option value="ひとし駐車場">
+      <option value="シーサーパーキング">
+      <option value="石垣島宿泊施設わったー家8・9番駐車場">
+      <option value="サザンゲートブリッジ">
+      <option value="ユーグレナ石垣港離島ターミナル">
+      <option value="石垣市中央運動公園駐車場">
       <option value="南ぬ島石垣空港">
-      <option value="バンナ公園駐車場">
-      <option value="石垣市役所駐車場">
-      <option value="川平湾駐車場">
-      <option value="白保海岸駐車場">
-      <option value="米原ビーチ駐車場">
-      <option value="フサキビーチ駐車場">
-      <option value="底地ビーチ駐車場">
-      <option value="石垣市中央運動公園">
-      <option value="石垣市公設市場">
-      <option value="あやぱにモール">
-      <option value="ホテルロイヤルマリンパレス石垣島">
-      <option value="アートホテル石垣島">
-      <option value="グランヴィリオリゾート石垣島">
+      <option value="バンナ公園">
+      <option value="石垣市役所">
+      <option value="マックスバリュ石垣店">
+      <option value="イオンタウン石垣">
+      <option value="ドン・キホーテ石垣店">
+      <option value="川平湾">
+      <option value="米原ビーチ">
+      <option value="フサキビーチ">
+      <option value="底地ビーチ">
+      <option value="白保海岸">
       <option value="ANAインターコンチネンタル石垣リゾート">
+      <option value="フサキビーチリゾート">
+      <option value="グランヴィリオリゾート石垣島">
     </datalist>
   </div>
 
@@ -604,29 +614,44 @@ const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 
 // ============================================================
-// 石垣島 駐車場・スポット（マップ座標）
+// 石垣島 駐車場・スポット（Google マップ検索より）
 // ============================================================
 const SPOTS = {
-  '730記念広場駐車場':           { lat: 24.3374, lng: 124.1565 },
-  '美崎町市営駐車場':             { lat: 24.3359, lng: 124.1575 },
-  '石垣港離島ターミナル':         { lat: 24.3370, lng: 124.1583 },
-  '八島町駐車場':                 { lat: 24.3400, lng: 124.1575 },
-  'ユーグレナモール周辺':         { lat: 24.3388, lng: 124.1568 },
-  'イオンタウン石垣駐車場':       { lat: 24.3254, lng: 124.1582 },
-  'マックスバリュ石垣店':         { lat: 24.3324, lng: 124.1527 },
-  'ドン・キホーテ石垣店':         { lat: 24.3412, lng: 124.1553 },
-  '南ぬ島石垣空港':               { lat: 24.3964, lng: 124.2433 },
-  'バンナ公園駐車場':             { lat: 24.3518, lng: 124.1595 },
-  '石垣市役所駐車場':             { lat: 24.3409, lng: 124.1551 },
-  '川平湾駐車場':                 { lat: 24.4521, lng: 124.1444 },
-  '白保海岸駐車場':               { lat: 24.3699, lng: 124.2249 },
-  '米原ビーチ駐車場':             { lat: 24.4395, lng: 124.1760 },
-  'フサキビーチ駐車場':           { lat: 24.3258, lng: 124.1106 },
-  '底地ビーチ駐車場':             { lat: 24.3758, lng: 124.1095 },
-  '石垣市中央運動公園':           { lat: 24.3476, lng: 124.1717 },
-  '石垣市公設市場':               { lat: 24.3393, lng: 124.1559 },
-  'あやぱにモール':               { lat: 24.3391, lng: 124.1554 },
+  // ── 駐車場（石垣島の駐車場 検索結果）
+  '蔵元駐車場':                         { lat: 24.3384, lng: 124.1567 },
+  '石垣港離島ターミナル第1駐車場':       { lat: 24.3367, lng: 124.1580 },
+  '堤防駐車場':                         { lat: 24.3350, lng: 124.1601 },
+  '八島第2駐車場':                       { lat: 24.3384, lng: 124.1603 },
+  '石垣島離島ターミナル第2臨時駐車場':   { lat: 24.3361, lng: 124.1571 },
+  '石垣港離島ターミナル第2駐車場':       { lat: 24.3370, lng: 124.1575 },
+  '大川有料駐車場':                       { lat: 24.3395, lng: 124.1538 },
+  'まるくに駐車場':                       { lat: 24.3399, lng: 124.1539 },
+  'Dパーキング石垣市大川第一':           { lat: 24.3393, lng: 124.1540 },
+  'OGLパーキング':                       { lat: 24.3397, lng: 124.1537 },
+  'タケトミタウンパーキング':             { lat: 24.3410, lng: 124.1551 },
+  'アイランドパーキング20石垣島':         { lat: 24.3379, lng: 124.1562 },
+  'akkipa登野城駐車場':                   { lat: 24.3402, lng: 124.1572 },
+  'ひとし駐車場':                         { lat: 24.3393, lng: 124.1565 },
+  'シーサーパーキング':                   { lat: 24.3378, lng: 124.1567 },
+  '石垣島宿泊施設わったー家8・9番駐車場': { lat: 24.3390, lng: 124.1560 },
+  'サザンゲートブリッジ':                 { lat: 24.3280, lng: 124.1515 },
+  'ユーグレナ石垣港離島ターミナル':       { lat: 24.3368, lng: 124.1583 },
+  '石垣市中央運動公園駐車場':             { lat: 24.3476, lng: 124.1717 },
+  // ── その他スポット
+  '南ぬ島石垣空港':                       { lat: 24.3964, lng: 124.2433 },
+  'バンナ公園':                           { lat: 24.3518, lng: 124.1595 },
+  '石垣市役所':                           { lat: 24.3409, lng: 124.1551 },
+  'マックスバリュ石垣店':                 { lat: 24.3324, lng: 124.1527 },
+  'イオンタウン石垣':                     { lat: 24.3254, lng: 124.1582 },
+  'ドン・キホーテ石垣店':                 { lat: 24.3412, lng: 124.1553 },
+  '川平湾':                               { lat: 24.4521, lng: 124.1444 },
+  '米原ビーチ':                           { lat: 24.4395, lng: 124.1760 },
+  'フサキビーチ':                         { lat: 24.3258, lng: 124.1106 },
+  '底地ビーチ':                           { lat: 24.3758, lng: 124.1095 },
+  '白保海岸':                             { lat: 24.3699, lng: 124.2249 },
   'ANAインターコンチネンタル石垣リゾート': { lat: 24.3828, lng: 124.1421 },
+  'フサキビーチリゾート':                 { lat: 24.3249, lng: 124.1085 },
+  'グランヴィリオリゾート石垣島':         { lat: 24.3820, lng: 124.1432 },
 };
 
 // ============================================================
@@ -805,11 +830,16 @@ function renderRideTable() {
     const payLabel = r.payment === 'cash' ? '現金' : 'カード等';
     const distStr  = r.distance > 0 ? r.distance.toFixed(1)+'km' : '—';
     const durStr   = r.durationMin > 0 ? r.durationMin+'分' : '—';
-    // 出発地マップリンク
-    const spot = SPOTS[r.departure];
-    const depUrl = spot
-      ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
-      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.departure||''))}`;
+    // 出発地マップリンク（GPS座標 → SPOTSデータ → 住所検索の順で優先）
+    let depUrl;
+    if (r.depLat) {
+      depUrl = `https://maps.google.com/?q=${r.depLat},${r.depLng}`;
+    } else {
+      const spot = SPOTS[r.departure];
+      depUrl = spot
+        ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
+        : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.departure||''))}`;
+    }
     const depCell = r.departure
       ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
     // 到着地マップリンク（GPS座標があれば使う）
@@ -853,6 +883,7 @@ let rideStartTime = null;
 let rideDist = 0, rideLastPos = null;
 let rideCurrentLat = null, rideCurrentLng = null;
 let rideFare = 0, ridePayment = 'cash', rideFareType = 'general';
+let depLat = null, depLng = null, isFirstGpsPos = true;
 
 function startNewRide() {
   rideDist = 0; rideLastPos = null;
@@ -900,6 +931,7 @@ function syncFareTypeBtns(groupId, attr, val) {
 
 function doDepart() {
   rideStartTime = new Date();
+  depLat = null; depLng = null; isFirstGpsPos = true;
   document.getElementById('ride-title').textContent =
     `🚗 代行 #${state.rides.length+1}　${nowTime()} 出発`;
   document.getElementById('section-pre-depart').classList.add('hidden');
@@ -975,7 +1007,8 @@ function doCompleteRide() {
 
   const ride = {
     ...state._tmpRide, customer, departure, destination,
-    fare: fareVal, payment: ridePayment, notes
+    fare: fareVal, payment: ridePayment, notes,
+    depLat, depLng
   };
   state.rides.push(ride);
   state._tmpRide = null;
@@ -990,6 +1023,7 @@ function doCompleteRide() {
     distance: ride.distance, fare: ride.fare, fare_type: rideFareType,
     payment_type: ride.payment, notes: ride.notes,
     arrival_place: ride.arrivalPlace, arrival_lat: ride.arrivalLat, arrival_lng: ride.arrivalLng,
+    departure_lat: ride.depLat, departure_lng: ride.depLng,
     date: state.shiftDate || todayISO()
   }, 'return=minimal').catch(()=>{});
 
@@ -1001,6 +1035,10 @@ function doCompleteRide() {
 function onGpsPos(pos) {
   const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
   rideCurrentLat = lat; rideCurrentLng = lng;
+  // 出発地GPS記録（最初の精度OK位置を保存）
+  if (isFirstGpsPos && acc < 200) {
+    depLat = lat; depLng = lng; isFirstGpsPos = false;
+  }
   document.getElementById('gps-text').textContent = `GPS: 計測中（精度 ±${Math.round(acc)}m）`;
   if (rideLastPos) {
     const d = haversine(rideLastPos.lat, rideLastPos.lng, lat, lng);
