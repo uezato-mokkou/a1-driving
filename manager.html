@@ -3,276 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>石垣島運転代行 管理画面</title>
+  <title>A1運転代行 管理画面</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
-      --accent: #3b82f6;
-      --green: #22c55e;
-      --red: #ef4444;
-      --yellow: #f59e0b;
-      --line: #06c755;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
+      --bg: #0f172a; --card: #1e293b; --border: #334155;
+      --accent: #3b82f6; --green: #22c55e; --red: #ef4444;
+      --yellow: #f59e0b; --text: #f1f5f9; --muted: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: -apple-system,'Helvetica Neue','Hiragino Sans',sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh;
     }
-
     header {
-      background: var(--card);
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      background: var(--card); padding: 10px 16px;
       border-bottom: 2px solid var(--accent);
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 200;
     }
-    header h1 { font-size: 16px; font-weight: 700; }
+    header h1 { font-size: 15px; font-weight: 700; }
     .conn-badge {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-weight: 600;
+      font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600;
     }
-    .conn-ok  { background: rgba(34,197,94,0.2);  color: var(--green); }
-    .conn-err { background: rgba(239,68,68,0.2);   color: var(--red); }
-    .conn-off { background: rgba(148,163,184,0.15); color: var(--muted); }
+    .conn-ok  { background: rgba(34,197,94,.2);  color: var(--green); }
+    .conn-err { background: rgba(239,68,68,.2);  color: var(--red); }
+    .conn-off { background: rgba(148,163,184,.15); color: var(--muted); }
 
     /* マップ */
-    #map {
-      flex: 1;
-      min-height: 0;
-      z-index: 0;
-    }
+    #map { height: 320px; z-index: 0; }
 
     /* 車両パネル */
-    .vehicle-panels {
-      display: flex;
-      gap: 8px;
-      padding: 8px;
-      background: var(--bg);
-      flex-shrink: 0;
-    }
+    .vehicle-panels { display: flex; gap: 8px; padding: 8px; flex-wrap: wrap; }
     .vehicle-card {
-      flex: 1;
-      background: var(--card);
-      border-radius: 10px;
-      padding: 10px 12px;
-      border: 2px solid var(--border);
-      transition: border-color 0.3s;
+      flex: 1; min-width: 150px; background: var(--card);
+      border-radius: 12px; padding: 12px 14px;
+      border: 2px solid var(--border); transition: border-color .3s;
+      position: relative; overflow: hidden;
     }
-    .vehicle-card.driving { border-color: var(--green); }
+    .vehicle-card.driving {
+      border-color: var(--green);
+      animation: drivingPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes drivingPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
+      50%      { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+    }
     .vehicle-card.departing { border-color: var(--yellow); }
+    .vehicle-card.hidden-card { display: none; }
 
-    .vc-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
+    .vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .vc-name { font-size: 15px; font-weight: 800; }
     .vc-status {
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 700;
+      font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 700;
     }
-    .st-waiting   { background: rgba(148,163,184,0.2); color: var(--muted); }
-    .st-driving   { background: rgba(34,197,94,0.2);   color: var(--green); }
-    .st-departing { background: rgba(245,158,11,0.2);  color: var(--yellow); }
+    .st-waiting   { background: rgba(148,163,184,.2); color: var(--muted); }
+    .st-driving   { background: rgba(34,197,94,.2);   color: var(--green); animation: statusBlink 0.8s ease-in-out infinite alternate; }
+    .st-departing { background: rgba(245,158,11,.2);  color: var(--yellow); }
+    @keyframes statusBlink { from { opacity: 1; } to { opacity: 0.4; } }
 
-    .vc-info { font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .vc-info { font-size: 12px; color: var(--muted); line-height: 1.8; margin-bottom: 8px; }
     .vc-info span { color: var(--text); font-weight: 600; }
 
-    .vc-metrics {
-      display: flex;
-      gap: 8px;
-      margin: 8px 0;
-    }
+    .vc-metrics { display: flex; gap: 6px; margin-bottom: 8px; }
     .vc-metric {
-      flex: 1;
-      background: var(--bg);
-      border-radius: 6px;
-      padding: 6px 8px;
-      text-align: center;
+      flex: 1; background: var(--bg); border-radius: 6px; padding: 6px 8px; text-align: center;
     }
-    .vc-metric .val { font-size: 18px; font-weight: 800; }
+    .vc-metric .val { font-size: 16px; font-weight: 800; }
     .vc-metric .lbl { font-size: 10px; color: var(--muted); }
 
-    .btn-line {
-      display: block;
-      width: 100%;
-      padding: 8px;
-      background: var(--line);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
+    .updated { font-size: 10px; color: var(--muted); text-align: right; }
+
+    /* 走行中バナー */
+    .driving-banner {
+      display: none; background: var(--green); color: #fff;
+      text-align: center; font-size: 12px; font-weight: 800;
+      padding: 4px 8px; border-radius: 6px; margin-bottom: 6px;
+      animation: statusBlink 0.8s ease-in-out infinite alternate;
+    }
+    .vehicle-card.driving .driving-banner { display: block; }
+
+    /* 配車依頼ボタン */
+    .btn-req {
+      display: block; width: 100%; padding: 9px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 700;
+      cursor: pointer; margin-top: 8px; touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-line:active { opacity: 0.8; }
-    .btn-line:disabled { opacity: 0.35; }
+    .btn-req:active { opacity: 0.8; }
+    .btn-req:disabled { opacity: 0.3; }
 
-    .updated { font-size: 10px; color: var(--muted); text-align: right; margin-top: 4px; }
+    /* セクション */
+    .section { margin: 10px 8px; background: var(--card); border-radius: 12px; padding: 14px 16px; }
+    .section-title {
+      font-size: 11px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1px; font-weight: 700; margin-bottom: 12px;
+    }
+    .input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .input-row:last-child { margin-bottom: 0; }
+    .input-row label { font-size: 12px; color: var(--muted); width: 60px; flex-shrink: 0; font-weight: 600; }
+    .input-row input, .input-row select {
+      flex: 1; padding: 9px 12px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+    }
+    .input-row input:focus, .input-row select:focus { outline: none; border-color: var(--accent); }
+    select option { background: var(--card); }
+
+    .btn-send {
+      display: block; width: 100%; padding: 14px; border: none;
+      border-radius: 10px; background: var(--accent); color: #fff;
+      font-size: 15px; font-weight: 800; cursor: pointer;
+      touch-action: manipulation; margin-top: 12px;
+    }
+    .btn-send:active { opacity: 0.85; }
+
+    /* 送信済み依頼リスト */
+    .req-item {
+      padding: 10px 12px; background: var(--bg); border-radius: 8px;
+      margin-bottom: 8px; font-size: 12px;
+    }
+    .req-item:last-child { margin-bottom: 0; }
+    .req-car   { font-weight: 800; font-size: 13px; }
+    .req-info  { color: var(--muted); margin-top: 2px; }
+    .req-status-pending  { color: var(--yellow); font-weight: 700; }
+    .req-status-accepted { color: var(--green);  font-weight: 700; }
+    .req-status-declined { color: var(--red);    font-weight: 700; }
 
     /* 乗務記録テーブル */
-    .rides-panel {
-      background: var(--bg);
-      padding: 8px;
-      flex-shrink: 0;
-    }
-    .rides-title {
-      font-size: 11px; color: var(--muted); font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1px;
-      padding: 4px 8px 8px;
-    }
-    .rides-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+    .rides-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
     .rides-tab {
       padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-      cursor: pointer; border: 1px solid var(--border); background: var(--card);
+      cursor: pointer; border: 1px solid var(--border); background: var(--bg);
       color: var(--muted); touch-action: manipulation;
     }
-    .rides-tab.active-a { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,.15); }
-    .rides-tab.active-b { border-color: #a855f7; color: #a855f7; background: rgba(168,85,247,.15); }
-    .rides-tab.active-c { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,.15); }
-    .rides-wrap { overflow-x: auto; }
-    .rides-wrap table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .rides-wrap th {
-      background: var(--card); padding: 5px 6px; text-align: center;
+    .rides-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,.15); }
+    .table-wrap { overflow-x: auto; }
+    .table-wrap table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .table-wrap th {
+      background: var(--bg); padding: 5px 6px; text-align: center;
       color: var(--muted); font-weight: 600; white-space: nowrap;
     }
-    .rides-wrap td {
+    .table-wrap td {
       padding: 7px 6px; border-bottom: 1px solid var(--border);
-      text-align: center; vertical-align: middle; color: var(--text);
+      text-align: center; vertical-align: middle;
     }
-    .rides-wrap tr:last-child td { border-bottom: none; }
-    .rides-wrap td a { color: var(--accent); text-decoration: none; }
+    .table-wrap tr:last-child td { border-bottom: none; }
+    .table-wrap td a { color: var(--accent); text-decoration: none; }
     .pay-cash     { color: var(--green); font-weight: 700; }
     .pay-cashless { color: #a855f7; font-weight: 700; }
     .rides-total {
-      display: flex; gap: 8px; padding: 6px 4px;
-      font-size: 12px; border-top: 1px solid var(--border); margin-top: 4px;
+      display: flex; gap: 8px; padding: 8px 4px;
+      font-size: 12px; border-top: 1px solid var(--border); margin-top: 6px; flex-wrap: wrap;
     }
     .rides-total span { color: var(--muted); }
     .rides-total b { color: var(--text); }
 
-    /* Leafletカスタムアイコン */
-    .car-marker {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .car-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      border: 3px solid #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    }
-    .car-icon.car-a { background: #3b82f6; }
-    .car-icon.car-b { background: #a855f7; }
-    .car-icon.waiting { opacity: 0.5; }
-    .car-label {
-      background: rgba(0,0,0,0.7);
-      color: #fff;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 4px;
-      margin-top: 2px;
-      white-space: nowrap;
+    /* 未出勤メッセージ */
+    .no-shift-msg {
+      text-align: center; padding: 20px; color: var(--muted); font-size: 13px;
     }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>🗺 石垣島運転代行 管理画面</h1>
-  <span class="conn-badge conn-off" id="conn-badge">未接続</span>
+  <h1>🗺 A1運転代行 管理画面</h1>
+  <span class="conn-badge conn-off" id="conn-badge">接続中...</span>
 </header>
 
+<!-- マップ -->
 <div id="map"></div>
 
-<div class="vehicle-panels">
-  <!-- 車A -->
-  <div class="vehicle-card" id="card-a">
-    <div class="vc-header">
-      <div class="vc-name" style="color:#3b82f6">🚗 車A</div>
-      <div class="vc-status st-waiting" id="status-a">待機中</div>
-    </div>
-    <div class="vc-metrics">
-      <div class="vc-metric">
-        <div class="val" id="dist-a">—</div>
-        <div class="lbl">km</div>
-      </div>
-      <div class="vc-metric">
-        <div class="val" id="fare-a">—</div>
-        <div class="lbl">円</div>
-      </div>
-    </div>
-    <div class="vc-info" id="info-a">お客様：—<br>目的地：—</div>
-    <div class="updated" id="updated-a"></div>
-    <button class="btn-line" style="margin-top:8px" onclick="sendLine('A')" id="line-btn-a">
-      📱 車Aにテンプレ配車
-    </button>
-  </div>
+<!-- 出勤中の車両パネル -->
+<div class="vehicle-panels" id="vehicle-panels">
+  <!-- 動的に生成 -->
+  <div class="no-shift-msg" id="no-shift-msg">本日出勤中の車両はありません</div>
+</div>
 
-  <!-- 車B -->
-  <div class="vehicle-card" id="card-b">
-    <div class="vc-header">
-      <div class="vc-name" style="color:#a855f7">🚗 車B</div>
-      <div class="vc-status st-waiting" id="status-b">待機中</div>
-    </div>
-    <div class="vc-metrics">
-      <div class="vc-metric">
-        <div class="val" id="dist-b">—</div>
-        <div class="lbl">km</div>
-      </div>
-      <div class="vc-metric">
-        <div class="val" id="fare-b">—</div>
-        <div class="lbl">円</div>
-      </div>
-    </div>
-    <div class="vc-info" id="info-b">お客様：—<br>目的地：—</div>
-    <div class="updated" id="updated-b"></div>
-    <button class="btn-line" style="margin-top:8px" onclick="sendLine('B')" id="line-btn-b">
-      📱 車Bにテンプレ配車
-    </button>
+<!-- 配車依頼フォーム -->
+<div class="section">
+  <div class="section-title">📨 配車依頼を送る</div>
+  <div class="input-row">
+    <label>対象車</label>
+    <select id="req-car">
+      <option value="">出勤中の車を選択</option>
+    </select>
+  </div>
+  <div class="input-row">
+    <label>お客様名</label>
+    <input type="text" id="req-customer" placeholder="山田 太郎">
+  </div>
+  <div class="input-row">
+    <label>お迎え場所</label>
+    <input type="text" id="req-pickup" placeholder="730記念広場 など">
+  </div>
+  <div class="input-row">
+    <label>目的地</label>
+    <input type="text" id="req-destination" placeholder="川平方面・○○ホテル">
+  </div>
+  <div class="input-row">
+    <label>メモ</label>
+    <input type="text" id="req-note" placeholder="（任意）">
+  </div>
+  <button class="btn-send" id="btn-send-req">📨 依頼を送信する</button>
+</div>
+
+<!-- 送信済み依頼リスト -->
+<div class="section">
+  <div class="section-title">📋 送信済み依頼</div>
+  <div id="req-list">
+    <div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">まだ依頼はありません</div>
   </div>
 </div>
 
-<!-- 乗務記録パネル -->
-<div class="rides-panel">
-  <div class="rides-title">📋 本日の乗務記録</div>
-  <div class="rides-tabs">
-    <div class="rides-tab active-a" id="rtab-a" data-car="car_a">🚗 車A</div>
-    <div class="rides-tab" id="rtab-b" data-car="car_b">🚗 車B</div>
-    <div class="rides-tab" id="rtab-c" data-car="car_c">🚗 車C</div>
+<!-- 乗務記録 -->
+<div class="section">
+  <div class="section-title">📋 本日の乗務記録</div>
+  <div class="rides-tabs" id="rides-tabs">
+    <!-- 動的に生成 -->
   </div>
-  <div class="rides-wrap">
+  <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th></tr>
+        <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th></tr>
       </thead>
       <tbody id="rides-tbody">
-        <tr><td colspan="9" style="color:var(--muted);padding:16px">記録なし</td></tr>
+        <tr><td colspan="10" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
       </tbody>
     </table>
   </div>
@@ -285,207 +245,377 @@
 </div>
 
 <script>
-// ================================================
-// ★ Supabase設定（staff_gps_app.htmlと同じ値を入力）
-// ================================================
 const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 
-// ================================================
-// 石垣島の中心座標
-// ================================================
-const ISHIGAKI_CENTER = [24.3336, 124.1543];
+const ISHIGAKI_CENTER = [24.3380, 124.1543];
 
-// ================================================
+// 本日ISO
+const todayISO = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+})();
+
+// 車情報
+const CAR_DEFS = {
+  car_a: { letter: 'A', name: 'MRワゴン', plate: 'も90-39', color: '#3b82f6' },
+  car_b: { letter: 'B', name: 'タント',   plate: 'よ95-24', color: '#a855f7' },
+  car_c: { letter: 'C', name: 'ムーブ',   plate: 'ゆ83-01', color: '#22c55e' }
+};
+
+// ============================================================
+// Supabase fetch
+// ============================================================
+async function sbGet(path) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+async function sbPost(path, body, prefer) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': prefer || 'return=representation'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) return null;
+    const t = await r.text();
+    return t ? JSON.parse(t) : null;
+  } catch(e) { return null; }
+}
+
+// ============================================================
 // マップ初期化
-// ================================================
-const map = L.map('map', {
-  center: ISHIGAKI_CENTER,
-  zoom: 12,
-  zoomControl: true
-});
-
+// ============================================================
+const map = L.map('map', { center: ISHIGAKI_CENTER, zoom: 13, zoomControl: true });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors',
-  maxZoom: 19
+  attribution: '© OpenStreetMap', maxZoom: 19
 }).addTo(map);
 
-// ================================================
-// 車両マーカー
-// ================================================
-function makeIcon(car, status) {
-  const color = car === 'A' ? '#3b82f6' : '#a855f7';
-  const opacity = status === 'waiting' ? '0.5' : '1';
-  const label = status === 'driving' ? '走行中' : status === 'departing' ? '出発' : '待機';
+const markers = {};
+
+function makeMarkerIcon(carId, status) {
+  const def = CAR_DEFS[carId];
+  const color = def ? def.color : '#888';
+  const isDriving = status === 'driving';
+  const label = isDriving ? '🚗走行中' : status === 'departing' ? '📍出発' : '⏸待機';
+  const glow = isDriving ? `box-shadow:0 0 0 6px ${color}44;` : '';
   return L.divIcon({
     className: '',
     html: `<div style="display:flex;flex-direction:column;align-items:center">
-      <div style="width:40px;height:40px;border-radius:50%;background:${color};opacity:${opacity};
+      <div style="width:42px;height:42px;border-radius:50%;background:${color};
         display:flex;align-items:center;justify-content:center;font-size:20px;
-        border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5)">🚗</div>
-      <div style="background:rgba(0,0,0,0.75);color:#fff;font-size:11px;font-weight:700;
-        padding:2px 6px;border-radius:4px;margin-top:2px;white-space:nowrap">
-        車${car}・${label}</div>
+        border:3px solid #fff;${glow}">🚗</div>
+      <div style="background:rgba(0,0,0,0.8);color:#fff;font-size:10px;font-weight:700;
+        padding:2px 6px;border-radius:4px;margin-top:2px;white-space:nowrap">${def ? def.name : carId}・${label}</div>
     </div>`,
-    iconSize: [60, 60],
-    iconAnchor: [30, 20]
+    iconSize: [70, 60], iconAnchor: [35, 20]
   });
 }
 
-const markers = {
-  A: L.marker(ISHIGAKI_CENTER, { icon: makeIcon('A', 'waiting') }).addTo(map),
-  B: L.marker([24.3400, 124.1600], { icon: makeIcon('B', 'waiting') }).addTo(map)
-};
+// ============================================================
+// 出勤中の車（shifts テーブルから取得）
+// ============================================================
+let activeShifts = {}; // { car_id: shiftData }
+let activeRideTab = null;
 
-// ================================================
-// 車両データ
-// ================================================
-const vehicles = { A: {}, B: {} };
+async function fetchActiveShifts() {
+  const data = await sbGet(`/rest/v1/shifts?date=eq.${todayISO}&status=eq.active`);
+  if (!data) return;
 
-function getKey(id) {
-  if (id === 'car_a') return 'A';
-  if (id === 'car_b') return 'B';
-  return null;
+  const newActive = {};
+  data.forEach(s => { newActive[s.car_id] = s; });
+  activeShifts = newActive;
+
+  renderVehiclePanels();
+  updateRidesTabs();
+  updateReqCarSelect();
 }
 
-// ================================================
-// UI更新
-// ================================================
-function updateCard(key, data) {
-  vehicles[key] = data;
+function renderVehiclePanels() {
+  const panels = document.getElementById('vehicle-panels');
+  const noMsg  = document.getElementById('no-shift-msg');
+  const activeIds = Object.keys(activeShifts);
 
-  const status   = data.status || 'waiting';
-  const dist     = data.distance != null ? parseFloat(data.distance).toFixed(2) : '—';
-  const fare     = data.fare     != null ? parseInt(data.fare).toLocaleString()  : '—';
-  const customer = data.customer_name || '—';
-  const dest     = data.destination   || '—';
-  const updatedAt = data.updated_at
-    ? new Date(data.updated_at).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit', second:'2-digit'})
+  if (activeIds.length === 0) {
+    panels.innerHTML = '';
+    panels.appendChild(noMsg);
+    noMsg.style.display = '';
+    return;
+  }
+  noMsg.style.display = 'none';
+
+  // 既存カード以外を削除、新規追加
+  activeIds.forEach(carId => {
+    if (!document.getElementById('card-' + carId)) {
+      const def = CAR_DEFS[carId] || {};
+      const shift = activeShifts[carId];
+      const div = document.createElement('div');
+      div.className = 'vehicle-card';
+      div.id = 'card-' + carId;
+      div.innerHTML = `
+        <div class="driving-banner">🚗 走行中！</div>
+        <div class="vc-header">
+          <div class="vc-name" style="color:${def.color}">${def.name}（${def.plate}）</div>
+          <div class="vc-status st-waiting" id="status-${carId}">待機中</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
+          ${shift.driver1_name||''}／${shift.driver2_name||''}
+        </div>
+        <div class="vc-metrics">
+          <div class="vc-metric"><div class="val" id="dist-${carId}">—</div><div class="lbl">km</div></div>
+          <div class="vc-metric"><div class="val" id="fare-${carId}">—</div><div class="lbl">円</div></div>
+        </div>
+        <div class="vc-info" id="info-${carId}">お客様：—<br>目的地：—</div>
+        <div class="updated" id="updated-${carId}"></div>
+        <button class="btn-req" onclick="openReqFormFor('${carId}')">📨 配車依頼</button>
+      `;
+      panels.appendChild(div);
+    }
+    // マーカー初期化
+    if (!markers[carId]) {
+      markers[carId] = L.marker(ISHIGAKI_CENTER, { icon: makeMarkerIcon(carId, 'waiting') }).addTo(map);
+    }
+  });
+
+  // 退勤した車のカードを削除
+  document.querySelectorAll('[id^="card-car_"]').forEach(card => {
+    const carId = card.id.replace('card-', '');
+    if (!activeShifts[carId]) {
+      card.remove();
+      if (markers[carId]) { markers[carId].remove(); delete markers[carId]; }
+    }
+  });
+}
+
+// ============================================================
+// 車両データ更新（vehicles テーブル）
+// ============================================================
+async function fetchVehicles() {
+  const data = await sbGet('/rest/v1/vehicles?select=*');
+  if (!data) {
+    document.getElementById('conn-badge').textContent = '接続エラー';
+    document.getElementById('conn-badge').className   = 'conn-badge conn-err';
+    return;
+  }
+  document.getElementById('conn-badge').textContent = '接続中 🟢';
+  document.getElementById('conn-badge').className   = 'conn-badge conn-ok';
+
+  data.forEach(row => {
+    if (!activeShifts[row.id]) return; // 出勤中でない車はスキップ
+    updateVehicleCard(row.id, row);
+  });
+}
+
+function updateVehicleCard(carId, data) {
+  const status = data.status || 'waiting';
+  const dist   = data.distance != null ? parseFloat(data.distance).toFixed(2) : '—';
+  const fare   = data.fare     != null ? parseInt(data.fare).toLocaleString()  : '—';
+  const updAt  = data.updated_at
+    ? new Date(data.updated_at).toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit',second:'2-digit'})
     : '';
 
-  const stMap = {
-    waiting:   ['待機中',   'st-waiting'],
-    departing: ['出発',     'st-departing'],
-    driving:   ['走行中',   'st-driving']
-  };
-  const [stLabel, stClass] = stMap[status] || ['不明', 'st-waiting'];
+  const stMap = { waiting: ['待機中','st-waiting'], departing: ['出発','st-departing'], driving: ['走行中','st-driving'] };
+  const [stLabel, stClass] = stMap[status] || ['不明','st-waiting'];
 
-  const lk = key.toLowerCase();
-  document.getElementById(`status-${lk}`).textContent  = stLabel;
-  document.getElementById(`status-${lk}`).className    = `vc-status ${stClass}`;
-  document.getElementById(`dist-${lk}`).textContent    = dist;
-  document.getElementById(`fare-${lk}`).textContent    = fare;
-  document.getElementById(`info-${lk}`).innerHTML      =
-    `お客様：<span>${customer}</span><br>目的地：<span>${dest}</span>`;
-  document.getElementById(`updated-${lk}`).textContent = updatedAt ? `更新 ${updatedAt}` : '';
+  const statusEl  = document.getElementById('status-' + carId);
+  const distEl    = document.getElementById('dist-'   + carId);
+  const fareEl    = document.getElementById('fare-'   + carId);
+  const infoEl    = document.getElementById('info-'   + carId);
+  const updatedEl = document.getElementById('updated-'+ carId);
+  const card      = document.getElementById('card-'   + carId);
 
-  const card = document.getElementById(`card-${lk}`);
+  if (!statusEl || !card) return;
+
+  statusEl.textContent  = stLabel;
+  statusEl.className    = 'vc-status ' + stClass;
+  distEl.textContent    = dist;
+  fareEl.textContent    = fare;
+  infoEl.innerHTML      = `お客様：<span>${data.customer_name||'—'}</span><br>目的地：<span>${data.destination||'—'}</span>`;
+  updatedEl.textContent = updAt ? `更新 ${updAt}` : '';
+
   card.classList.remove('driving', 'departing');
   if (status === 'driving')   card.classList.add('driving');
   if (status === 'departing') card.classList.add('departing');
 
   // マーカー更新
-  if (data.lat && data.lng) {
-    markers[key].setLatLng([data.lat, data.lng]);
-    markers[key].setIcon(makeIcon(key, status));
-  } else {
-    markers[key].setIcon(makeIcon(key, status));
+  if (markers[carId]) {
+    if (data.lat && data.lng) markers[carId].setLatLng([data.lat, data.lng]);
+    markers[carId].setIcon(makeMarkerIcon(carId, status));
   }
 }
 
-// ================================================
-// LINE配車テンプレ
-// ================================================
-function sendLine(car) {
-  const time = new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
-  const msg  = `【配車依頼】車${car}\n次のお客様の対応をお願いします。\n場所：\n時刻：${time}`;
-  window.open(`https://line.me/R/msg/text/${encodeURIComponent(msg)}`, '_blank');
+// ============================================================
+// 配車依頼
+// ============================================================
+function openReqFormFor(carId) {
+  document.getElementById('req-car').value = carId;
+  document.getElementById('req-customer').focus();
+  document.getElementById('req-car').scrollIntoView({ behavior: 'smooth' });
 }
 
-// ================================================
-// ================================================
-// Supabase接続・5秒ポーリング（plain fetch）
-// ================================================
-async function fetchVehicles() {
-  try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/vehicles?select=*', {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-      }
+function updateReqCarSelect() {
+  const sel = document.getElementById('req-car');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">出勤中の車を選択</option>';
+  Object.keys(activeShifts).forEach(carId => {
+    const def = CAR_DEFS[carId] || {};
+    const opt = document.createElement('option');
+    opt.value = carId;
+    opt.textContent = `${def.name}（${def.plate}）`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+async function sendRequest() {
+  const carId   = document.getElementById('req-car').value;
+  const cust    = document.getElementById('req-customer').value.trim();
+  const pickup  = document.getElementById('req-pickup').value.trim();
+  const dest    = document.getElementById('req-destination').value.trim();
+  const note    = document.getElementById('req-note').value.trim();
+  if (!carId)  { alert('対象の車を選択してください'); return; }
+  if (!pickup) { alert('お迎え場所を入力してください'); return; }
+
+  const btn = document.getElementById('btn-send-req');
+  btn.disabled = true; btn.textContent = '送信中...';
+
+  await sbPost('/rest/v1/requests', {
+    car_id: carId, customer_name: cust, pickup, destination: dest, note, status: 'pending'
+  }, 'return=minimal');
+
+  btn.disabled = false; btn.textContent = '📨 依頼を送信する';
+  ['req-customer','req-pickup','req-destination','req-note'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  await fetchRequests();
+}
+
+// 依頼リスト表示
+let reqList = [];
+
+async function fetchRequests() {
+  const data = await sbGet(`/rest/v1/requests?order=created_at.desc&limit=20`);
+  if (!data) return;
+  reqList = data;
+  renderReqList();
+}
+
+function renderReqList() {
+  const el = document.getElementById('req-list');
+  if (!reqList || reqList.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">まだ依頼はありません</div>';
+    return;
+  }
+  el.innerHTML = reqList.map(r => {
+    const def = CAR_DEFS[r.car_id] || {};
+    const statusMap = {
+      pending:  ['⏳ 待機中', 'req-status-pending'],
+      accepted: ['✅ 受理済み', 'req-status-accepted'],
+      declined: ['✗ 見送り',  'req-status-declined']
+    };
+    const [stLabel, stClass] = statusMap[r.status] || ['—',''];
+    const time = r.created_at
+      ? new Date(r.created_at).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})
+      : '';
+    return `<div class="req-item">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="req-car" style="color:${def.color||'var(--text)'}">${def.name||r.car_id}</span>
+        <span class="${stClass}">${stLabel}</span>
+      </div>
+      <div class="req-info">
+        ${time}　お客様：${r.customer_name||'—'}　場所：${r.pickup||'—'}　→　${r.destination||'—'}
+        ${r.note ? '<br>メモ：'+r.note : ''}
+      </div>
+      ${r.status === 'accepted' ? `<div style="font-size:11px;color:var(--green);margin-top:4px">✅ 次の行先：${r.destination||'未設定'}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// 乗務記録
+// ============================================================
+function updateRidesTabs() {
+  const tabsEl = document.getElementById('rides-tabs');
+  tabsEl.innerHTML = '';
+  const ids = Object.keys(activeShifts);
+  if (ids.length === 0) return;
+  ids.forEach((carId, i) => {
+    const def = CAR_DEFS[carId] || {};
+    const tab = document.createElement('div');
+    tab.className = 'rides-tab' + (i === 0 ? ' active' : '');
+    tab.dataset.car = carId;
+    tab.textContent = `🚗 ${def.name}`;
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.rides-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      activeRideTab = this.dataset.car;
+      fetchTodayRides(activeRideTab);
     });
-    if (!res.ok) throw new Error('fetch error');
-    const data = await res.json();
-    data.forEach(row => {
-      const key = getKey(row.id);
-      if (key) updateCard(key, row);
-    });
-    document.getElementById('conn-badge').textContent = '接続中 🟢';
-    document.getElementById('conn-badge').className   = 'conn-badge conn-ok';
-  } catch(e) {
-    document.getElementById('conn-badge').textContent = '接続エラー';
-    document.getElementById('conn-badge').className   = 'conn-badge conn-err';
+    tabsEl.appendChild(tab);
+  });
+  if (ids.length > 0 && !activeRideTab) {
+    activeRideTab = ids[0];
+    fetchTodayRides(activeRideTab);
   }
 }
-
-// ================================================
-// 乗務記録フェッチ
-// ================================================
-let activeRideTab = 'car_a';
-const todayStr = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'})
-  .replace(/\//g,'-');
-// ISO形式に変換
-const todayISO = (() => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const dd= String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${dd}`;
-})();
 
 async function fetchTodayRides(carId) {
-  try {
-    const url = SUPABASE_URL + `/rest/v1/rides?car_id=eq.${carId}&date=eq.${todayISO}&order=created_at.asc`;
-    const res = await fetch(url, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    renderRidesTable(data);
-  } catch(e) {}
+  if (!carId) return;
+  const data = await sbGet(`/rest/v1/rides?car_id=eq.${carId}&date=eq.${todayISO}&order=created_at.asc`);
+  if (!data) return;
+  renderRidesTable(data);
 }
 
 function renderRidesTable(rides) {
-  const tbody = document.getElementById('rides-tbody');
+  const tbody   = document.getElementById('rides-tbody');
   const totalEl = document.getElementById('rides-total');
   if (!rides || rides.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--muted);padding:16px">記録なし</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
     totalEl.style.display = 'none';
     return;
   }
   let total = 0, cash = 0, cashless = 0;
   tbody.innerHTML = rides.map((r, i) => {
     const fare = r.fare || 0;
-    total += fare;
-    if (r.payment_type === 'cash') cash += fare; else cashless += fare;
+    total += fare; if (r.payment_type === 'cash') cash += fare; else cashless += fare;
     const payClass = r.payment_type === 'cash' ? 'pay-cash' : 'pay-cashless';
     const payLabel = r.payment_type === 'cash' ? '現金' : 'カード等';
     const dist = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
     const dur  = r.duration_min > 0 ? r.duration_min+'分' : '—';
+    // 出発地リンク
+    const depUrl = r.departure_lat
+      ? `https://maps.google.com/?q=${r.departure_lat},${r.departure_lng}`
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
+    const depCell = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
+    // 到着地リンク
     const destLabel = r.arrival_place || r.destination || '—';
-    const destUrl   = (r.arrival_lat && r.arrival_lng)
+    const destUrl = r.arrival_lat
       ? `https://maps.google.com/?q=${r.arrival_lat},${r.arrival_lng}`
       : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||''))}`;
     const destCell = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+    // 経路
+    const routeUrl = (r.departure_lat && r.arrival_lat)
+      ? `https://maps.google.com/maps/dir/${r.departure_lat},${r.departure_lng}/${r.arrival_lat},${r.arrival_lng}`
+      : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrival_place||r.destination||'')}`;
+    const hasRoute = r.arrival_lat || r.destination || r.arrival_place;
     return `<tr>
       <td>${i+1}</td>
       <td>${r.departure_time||'—'}</td>
-      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${r.departure||'—'}</td>
+      <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${depCell}</td>
       <td>${r.arrival_time||'—'}</td>
-      <td style="text-align:left;max-width:70px;overflow:hidden;white-space:nowrap">${destCell}</td>
+      <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${destCell}</td>
       <td>${dur}</td><td>${dist}</td>
       <td style="font-weight:700">¥${fare.toLocaleString()}</td>
       <td class="${payClass}">${payLabel}</td>
+      <td>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
     </tr>`;
   }).join('');
   totalEl.style.display = 'flex';
@@ -495,27 +625,22 @@ function renderRidesTable(rides) {
   document.getElementById('rt-comm').textContent     = '¥'+Math.floor(total*0.3).toLocaleString();
 }
 
-// タブ切り替え
-document.querySelectorAll('.rides-tab').forEach(tab => {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.rides-tab').forEach(t => {
-      t.className = 'rides-tab';
-    });
-    const car = this.dataset.car;
-    const suffix = car.slice(-1); // 'a','b','c'
-    this.classList.add(`active-${suffix}`);
-    activeRideTab = car;
-    fetchTodayRides(car);
-  });
-});
+// ============================================================
+// 初期化・ポーリング
+// ============================================================
+document.getElementById('btn-send-req').addEventListener('click', sendRequest);
 
-// 初回取得 + 5秒ごとに自動更新
-fetchVehicles();
-fetchTodayRides(activeRideTab);
-setInterval(() => {
-  fetchVehicles();
-  fetchTodayRides(activeRideTab);
-}, 5000);
+async function poll() {
+  await fetchActiveShifts();
+  await fetchVehicles();
+  await fetchRequests();
+  if (activeRideTab) await fetchTodayRides(activeRideTab);
+}
+
+// 初回
+poll();
+// 5秒ごと
+setInterval(poll, 5000);
 </script>
 </body>
 </html>

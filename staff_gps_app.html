@@ -104,7 +104,7 @@
     .car-card.active { border-color: var(--accent); background: rgba(59,130,246,.12); }
     .car-card .car-emoji { font-size: 22px; }
     .car-card .car-id    { font-size: 14px; font-weight: 800; margin-top: 4px; }
-    .car-card .car-model { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .car-card .car-model { font-size: 11px; color: var(--yellow); margin-top: 2px; }
 
     /* おつり */
     .change-row {
@@ -189,7 +189,6 @@
       background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3);
       border-radius: 10px; padding: 10px 14px;
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 0;
     }
     .live-fare-box .lf-val { font-size: 28px; font-weight: 800; color: var(--yellow); }
     .live-fare-box .lf-lbl { font-size: 10px; color: var(--muted); }
@@ -210,7 +209,6 @@
       background: var(--bg); color: var(--text); font-size: 14px; font-weight: 700;
       cursor: pointer; touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      transition: background .1s;
     }
     .adj-btn.plus  { border-color: var(--green); color: var(--green); }
     .adj-btn.minus { border-color: var(--red); color: var(--red); }
@@ -226,7 +224,6 @@
     /* 到着地住所 */
     .arrival-loc {
       background: var(--bg); border-radius: 8px; padding: 10px 12px;
-      margin-bottom: 0;
     }
     .arrival-loc .al-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .arrival-loc .al-addr { font-size: 11px; color: var(--muted); line-height: 1.5; }
@@ -275,13 +272,54 @@
       padding: 14px 16px; font-size: 14px;
       border-bottom: 1px solid var(--border);
       cursor: pointer; touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: transparent; user-select: none;
     }
     .dep-list-item:last-child { border-bottom: none; }
-    .dep-list-item:active { background: rgba(59,130,246,.25); }
+    .dep-list-item.pressing { background: rgba(59,130,246,.25); }
+
+    /* モーダル */
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.8);
+      z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal.hidden { display: none !important; }
+    .modal-box { background: var(--card); border-radius: 16px; padding: 24px 16px; width: 100%; max-width: 380px; }
+    .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; text-align: center; }
+
+    /* 配車依頼バナー */
+    .req-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: var(--red); color: #fff; padding: 14px 16px;
+      animation: reqBlink 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes reqBlink { from { background: #dc2626; } to { background: #f87171; } }
+    .req-btn {
+      padding: 9px 20px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+
+    /* スタッフ変更バナー（メイン画面） */
+    .staff-change-bar {
+      margin: 8px 12px; padding: 10px 14px; background: rgba(245,158,11,.12);
+      border: 1px solid rgba(245,158,11,.3); border-radius: 10px;
+      font-size: 12px; color: var(--yellow);
+    }
   </style>
 </head>
 <body>
+
+<!-- ========================================================
+     配車依頼バナー（固定・上部）
+     ======================================================== -->
+<div id="req-banner" class="req-banner hidden">
+  <div style="font-size:14px;font-weight:800;margin-bottom:4px">🔔 配車依頼が届いています！</div>
+  <div id="req-content" style="font-size:12px;opacity:.9;margin-bottom:8px"></div>
+  <div style="display:flex;gap:8px">
+    <button id="btn-req-accept" class="req-btn" style="background:#fff;color:var(--red)">✅ 受ける</button>
+    <button id="btn-req-decline" class="req-btn" style="background:rgba(255,255,255,.25);color:#fff">✗ 見送り</button>
+  </div>
+</div>
 
 <!-- ====================================================
      SCREEN 1: 始業登録
@@ -296,9 +334,9 @@
   <div class="section">
     <div class="section-title">🚙 車両選択</div>
     <div class="car-cards" id="setup-car-cards">
-      <div class="car-card active" data-car="A"><div class="car-emoji">🚗</div><div class="car-id">MRワゴン</div><div class="car-model" style="color:var(--yellow);font-size:11px;margin-top:3px"></div></div>
-      <div class="car-card" data-car="B"><div class="car-emoji">🚗</div><div class="car-id">タント</div><div class="car-model" style="color:var(--yellow);font-size:11px;margin-top:3px"></div></div>
-      <div class="car-card" data-car="C"><div class="car-emoji">🚗</div><div class="car-id">ムーブ</div><div class="car-model" style="color:var(--yellow);font-size:11px;margin-top:3px"></div></div>
+      <div class="car-card active" data-car="A"><div class="car-emoji">🚗</div><div class="car-id">MRワゴン</div><div class="car-model"></div></div>
+      <div class="car-card" data-car="B"><div class="car-emoji">🚗</div><div class="car-id">タント</div><div class="car-model"></div></div>
+      <div class="car-card" data-car="C"><div class="car-emoji">🚗</div><div class="car-id">ムーブ</div><div class="car-model"></div></div>
     </div>
     <div style="margin-top:12px">
       <div class="input-row">
@@ -366,6 +404,14 @@
   </div>
 
   <button class="btn btn-green" id="btn-start-shift">✅ 始業開始</button>
+
+  <!-- 既存シフト参加 -->
+  <div style="text-align:center;padding:8px 0 20px">
+    <button type="button" id="btn-join-shift"
+      style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;padding:8px">
+      📲 既存シフトに参加する（2台目・サブ端末）
+    </button>
+  </div>
 </div>
 
 <!-- ====================================================
@@ -376,6 +422,9 @@
     <h1 id="main-title">🚗 A1運転代行</h1>
     <p id="main-sub"></p>
   </header>
+
+  <!-- スタッフ変更バナー -->
+  <div id="staff-change-bar" class="staff-change-bar hidden"></div>
 
   <div class="section" style="padding-bottom:8px">
     <div class="section-title">📋 本日の乗務記録</div>
@@ -388,7 +437,7 @@
         </thead>
         <tbody id="ride-tbody">
           <tr id="no-ride-row">
-            <td colspan="9" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
+            <td colspan="10" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
           </tr>
         </tbody>
       </table>
@@ -405,6 +454,10 @@
     <div class="btn-row">
       <button class="btn btn-green" id="btn-new-ride" style="flex:2">＋ 新規代行</button>
       <button class="btn btn-gray" id="btn-go-endshift" style="flex:1;font-size:13px">退勤へ</button>
+    </div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn btn-gray" id="btn-staff-change" style="flex:1;font-size:12px;padding:10px">👤 スタッフ変更</button>
+      <button class="btn btn-gray" id="btn-share-shift" style="flex:1;font-size:12px;padding:10px">📲 シフト共有</button>
     </div>
   </div>
 </div>
@@ -425,25 +478,25 @@
       <label>お名前</label>
       <input type="text" id="ride-customer" placeholder="山田 太郎" autocomplete="off">
     </div>
-    <!-- 出発地（カスタムドロップダウン + マップボタン） -->
+    <!-- 出発地（カスタムドロップダウン） -->
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <label style="font-size:12px;color:var(--muted);width:54px;flex-shrink:0;font-weight:600">出発地</label>
       <div class="dep-wrapper">
         <input type="text" id="ride-departure"
-               placeholder="▼ タップでリスト表示" autocomplete="off"
+               placeholder="▼ タップでリスト / 直接入力OK" autocomplete="off"
                style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%">
         <div id="dep-list" class="dep-list hidden"></div>
       </div>
       <button type="button" id="dep-map-btn" class="map-btn" title="マップで確認">🗺</button>
     </div>
-    <!-- 目的地（出発前に入力） -->
+    <!-- 目的地 -->
     <div class="input-row">
       <label>目的地</label>
       <input type="text" id="ride-destination" placeholder="川平方面・○○ホテル" autocomplete="off">
     </div>
   </div>
 
-  <!-- 料金タイプ（出発前に選択） -->
+  <!-- 料金タイプ -->
   <div class="section" id="fare-type-section">
     <div class="section-title">💰 料金タイプ</div>
     <div class="radio-group" id="fare-type-group">
@@ -452,15 +505,13 @@
     </div>
   </div>
 
-  <!-- 出発ボタン（出発前のみ） -->
+  <!-- 出発ボタン -->
   <div id="section-pre-depart">
     <button class="btn btn-yellow" id="btn-depart">📍 出発（時刻を記録）</button>
   </div>
 
-  <!-- ★ 走行中 -->
+  <!-- 走行中 -->
   <div id="section-driving" class="hidden">
-
-    <!-- 料金タイプ切替（走行中も変更可） -->
     <div class="section" style="padding:10px 14px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:11px;color:var(--muted);font-weight:700">料金タイプ（変更可）</span>
@@ -471,7 +522,6 @@
       </div>
     </div>
 
-    <!-- GPS メトリクス + 現在料金 -->
     <div class="section">
       <div class="section-title">🛣 走行中</div>
       <div class="metrics">
@@ -484,7 +534,6 @@
           <div class="ml">経過時間</div>
         </div>
       </div>
-      <!-- 現在料金（リアルタイム） -->
       <div class="live-fare-box" id="live-fare-box">
         <div>
           <div class="lf-lbl">現在の料金（目安）</div>
@@ -501,10 +550,8 @@
     <button class="btn btn-red" id="btn-arrive">🏁 到着（計測ストップ）</button>
   </div>
 
-  <!-- ★ 到着後 -->
+  <!-- 到着後 -->
   <div id="section-arrived" class="hidden">
-
-    <!-- 到着地住所 -->
     <div class="section">
       <div class="section-title">📍 到着地</div>
       <div class="arrival-loc" id="arrival-loc-box">
@@ -514,7 +561,6 @@
       </div>
     </div>
 
-    <!-- 料金（±調整 + 手動入力） -->
     <div class="section">
       <div class="section-title">💰 料金（調整可）</div>
       <div class="fare-big" id="fare-display">¥0</div>
@@ -525,12 +571,9 @@
         <button class="adj-btn plus"  data-adj="+500">＋500</button>
       </div>
       <input type="number" class="fare-input" id="fare-edit" inputmode="numeric" placeholder="手動入力">
-      <div style="font-size:11px;color:var(--muted);margin-top:8px">
-        ※ 寄り道・経由など、自由に変更できます
-      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px">※ 寄り道・経由など、自由に変更できます</div>
     </div>
 
-    <!-- 支払方法（2択） -->
     <div class="section">
       <div class="section-title">💳 支払方法</div>
       <div class="radio-group" id="payment-group">
@@ -539,7 +582,6 @@
       </div>
     </div>
 
-    <!-- 備考 -->
     <div class="section">
       <div class="section-title">📝 備考（任意）</div>
       <textarea class="note-input" id="ride-notes" placeholder="コンビニ寄り道・友人経由など"></textarea>
@@ -590,6 +632,62 @@
   <button class="btn btn-gray" id="btn-end-back">← メインに戻る</button>
 </div>
 
+<!-- ====================================================
+     スタッフ変更モーダル
+     ==================================================== -->
+<div id="modal-staff" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-title">👤 スタッフ変更</div>
+    <div class="input-row" style="margin-bottom:12px">
+      <label>変更対象</label>
+      <select id="sc-role">
+        <option value="driver2">随行メンバー</option>
+        <option value="driver1">2種メンバー</option>
+      </select>
+    </div>
+    <div class="input-row" style="margin-bottom:12px" id="sc-row2">
+      <label>新担当者</label>
+      <select id="sc-name2">
+        <option value="">選択してください</option>
+        <option>譜久島</option><option>崎山</option><option>タカヒロ</option>
+        <option>上原</option><option>大山</option><option>西川</option>
+      </select>
+    </div>
+    <div class="input-row" style="margin-bottom:12px;display:none" id="sc-row1">
+      <label>新担当者</label>
+      <select id="sc-name1">
+        <option value="">選択してください</option>
+        <option>社長</option><option>茅原</option><option>金城</option><option>ホズミ</option>
+      </select>
+    </div>
+    <div class="input-row" style="margin-bottom:20px">
+      <label>変更時刻</label>
+      <input type="time" id="sc-time">
+    </div>
+    <button class="btn btn-blue" id="btn-sc-ok" style="margin:0;width:100%">✅ 変更を記録</button>
+    <button class="btn btn-gray" id="btn-sc-cancel" style="margin:8px 0 0;width:100%">キャンセル</button>
+  </div>
+</div>
+
+<!-- ====================================================
+     シフト参加モーダル
+     ==================================================== -->
+<div id="modal-join" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-title">📲 シフトに参加</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center">
+      参加する車両を選択してください
+    </div>
+    <div class="radio-group" id="join-car-group" style="margin-bottom:20px">
+      <div class="radio-btn" data-joincar="A" style="flex:1;text-align:center">MRワゴン<small>も90-39</small></div>
+      <div class="radio-btn" data-joincar="B" style="flex:1;text-align:center">タント<small>よ95-24</small></div>
+      <div class="radio-btn" data-joincar="C" style="flex:1;text-align:center">ムーブ<small>ゆ83-01</small></div>
+    </div>
+    <button class="btn btn-blue" id="btn-join-ok" style="margin:0;width:100%">✅ 参加する</button>
+    <button class="btn btn-gray" id="btn-join-cancel" style="margin:8px 0 0;width:100%">キャンセル</button>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // Supabase
@@ -598,10 +696,9 @@ const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 
 // ============================================================
-// 石垣島 駐車場・スポット（Google マップ検索より）
+// 石垣島 駐車場・スポット
 // ============================================================
 const SPOTS = {
-  // ── 駐車場（石垣島の駐車場 検索結果）
   '蔵元駐車場':                         { lat: 24.3384, lng: 124.1567 },
   '石垣港離島ターミナル第1駐車場':       { lat: 24.3367, lng: 124.1580 },
   '堤防駐車場':                         { lat: 24.3350, lng: 124.1601 },
@@ -621,7 +718,6 @@ const SPOTS = {
   'サザンゲートブリッジ':                 { lat: 24.3280, lng: 124.1515 },
   'ユーグレナ石垣港離島ターミナル':       { lat: 24.3368, lng: 124.1583 },
   '石垣市中央運動公園駐車場':             { lat: 24.3476, lng: 124.1717 },
-  // ── その他スポット
   '南ぬ島石垣空港':                       { lat: 24.3964, lng: 124.2433 },
   'バンナ公園':                           { lat: 24.3518, lng: 124.1595 },
   '石垣市役所':                           { lat: 24.3409, lng: 124.1551 },
@@ -654,6 +750,8 @@ let state = {
   screen: 'setup', car: 'A',
   driver1Name: '', driver1Time: '20:00',
   driver2Name: '', driver2Time: '20:00',
+  currentDriver1: '', currentDriver2: '',
+  staffChanges: [],
   weather: '晴れ', startMeter: 0,
   shiftId: null, shiftDate: '',
   rides: [], fareType: 'general'
@@ -728,6 +826,15 @@ async function sbPatch(path, body) {
 async function sbUpsert(path, body) {
   return sbPost(path, body, 'resolution=merge-duplicates');
 }
+async function sbGet(path) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
 
 // ============================================================
 // 始業登録
@@ -748,6 +855,7 @@ function initSetup() {
   // 初期選択車のナンバー表示
   const initCard = document.querySelector('#setup-car-cards .car-card.active');
   if (initCard) initCard.querySelector('.car-model').textContent = CARS[initCard.dataset.car].plate;
+
   document.querySelectorAll('#weather-group .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('#weather-group .radio-btn').forEach(b => b.classList.remove('active'));
@@ -765,6 +873,7 @@ function initSetup() {
   refreshChangeTotals();
   document.getElementById('btn-start-shift').addEventListener('click', startShift);
 }
+
 function refreshChangeTotals() {
   let total = 0;
   document.querySelectorAll('.ck-box.on').forEach(ck => { total += parseInt(ck.dataset.val); });
@@ -772,6 +881,7 @@ function refreshChangeTotals() {
   el.textContent = `¥${total.toLocaleString()} / ¥15,000`;
   el.className = 'change-total ' + (total >= 15000 ? 'ok' : 'ng');
 }
+
 async function startShift() {
   const d1 = document.getElementById('driver1-name').value;
   const d2 = document.getElementById('driver2-name').value;
@@ -783,6 +893,9 @@ async function startShift() {
   state.driver1Time = document.getElementById('driver1-time').value;
   state.driver2Name = d2;
   state.driver2Time = document.getElementById('driver2-time').value;
+  state.currentDriver1 = d1;
+  state.currentDriver2 = d2;
+  state.staffChanges = [];
   state.startMeter  = parseInt(smInput) || 0;
   state.shiftDate   = todayISO();
   state.rides       = [];
@@ -798,6 +911,120 @@ async function startShift() {
   saveState();
   showScreen('main');
   renderMain();
+  startRideSync();
+}
+
+// ============================================================
+// シフト参加（サブ端末）
+// ============================================================
+let joinSelectedCar = null;
+
+function openJoinModal() {
+  joinSelectedCar = null;
+  document.querySelectorAll('#join-car-group .radio-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('modal-join').classList.remove('hidden');
+}
+
+async function joinExistingShift() {
+  if (!joinSelectedCar) { alert('車両を選択してください'); return; }
+  const carId = CARS[joinSelectedCar].id;
+  const data = await sbGet(`/rest/v1/shifts?car_id=eq.${carId}&date=eq.${todayISO()}&status=eq.active&limit=1`);
+  if (!data || data.length === 0) {
+    alert('本日のシフトが見つかりません。\n先に始業登録してください。');
+    return;
+  }
+  const shift = data[0];
+  state.car         = joinSelectedCar;
+  state.shiftId     = shift.id;
+  state.shiftDate   = shift.date;
+  state.driver1Name = shift.driver1_name || '';
+  state.driver1Time = shift.driver1_start || '20:00';
+  state.driver2Name = shift.driver2_name || '';
+  state.driver2Time = shift.driver2_start || '20:00';
+  state.currentDriver1 = state.driver1Name;
+  state.currentDriver2 = state.driver2Name;
+  state.staffChanges = [];
+  state.weather     = shift.weather || '晴れ';
+  state.startMeter  = shift.start_meter || 0;
+  state.rides       = [];
+  state.shiftDate   = shift.date;
+  await syncRidesFromSupabase();
+  saveState();
+  document.getElementById('modal-join').classList.add('hidden');
+  showScreen('main');
+  renderMain();
+  startRideSync();
+}
+
+// ============================================================
+// Supabase 乗務記録同期（サブ端末・定期）
+// ============================================================
+let rideSyncInterval = null;
+
+function startRideSync() {
+  if (rideSyncInterval) clearInterval(rideSyncInterval);
+  rideSyncInterval = setInterval(async () => {
+    await syncRidesFromSupabase();
+    renderMain();
+  }, 15000);
+}
+
+async function syncRidesFromSupabase() {
+  if (!state.shiftId) return;
+  const data = await sbGet(`/rest/v1/rides?shift_id=eq.${state.shiftId}&order=created_at.asc`);
+  if (!data) return;
+  const localSeqs = new Set(state.rides.map(r => r.seq));
+  let changed = false;
+  data.forEach(r => {
+    if (!localSeqs.has(r.seq_num)) {
+      state.rides.push({
+        seq: r.seq_num, customer: r.customer_name || '',
+        departure: r.departure || '', destination: r.destination || '',
+        depTime: r.departure_time || '', arrTime: r.arrival_time || '',
+        durationMin: r.duration_min || 0, distance: r.distance || 0,
+        fare: r.fare || 0, payment: r.payment_type || 'cash', notes: r.notes || '',
+        arrivalPlace: r.arrival_place || '',
+        arrivalLat: r.arrival_lat || null, arrivalLng: r.arrival_lng || null,
+        depLat: r.departure_lat || null, depLng: r.departure_lng || null
+      });
+      changed = true;
+    }
+  });
+  if (changed) { state.rides.sort((a,b) => a.seq - b.seq); saveState(); }
+}
+
+// ============================================================
+// スタッフ変更
+// ============================================================
+function openStaffChangeModal() {
+  document.getElementById('sc-time').value = nowTime();
+  document.getElementById('sc-role').value = 'driver2';
+  document.getElementById('sc-row2').style.display = '';
+  document.getElementById('sc-row1').style.display = 'none';
+  document.getElementById('sc-name2').value = '';
+  document.getElementById('sc-name1').value = '';
+  document.getElementById('modal-staff').classList.remove('hidden');
+}
+
+function applyStaffChange() {
+  const role = document.getElementById('sc-role').value;
+  const time = document.getElementById('sc-time').value;
+  const newName = role === 'driver2'
+    ? document.getElementById('sc-name2').value
+    : document.getElementById('sc-name1').value;
+  if (!newName) { alert('新しい担当者を選択してください'); return; }
+
+  const oldName = role === 'driver2' ? state.currentDriver2 : state.currentDriver1;
+  state.staffChanges.push({ time, role, oldName, newName });
+  if (role === 'driver2') state.currentDriver2 = newName;
+  else state.currentDriver1 = newName;
+
+  const bar = document.getElementById('staff-change-bar');
+  bar.classList.remove('hidden');
+  bar.textContent = `👤 スタッフ変更 ${time}〜 ${newName}（${role === 'driver2' ? '随行' : '2種'}）に変更`;
+
+  document.getElementById('modal-staff').classList.add('hidden');
+  saveState();
 }
 
 // ============================================================
@@ -807,10 +1034,19 @@ function renderMain() {
   const car = CARS[state.car];
   document.getElementById('main-title').textContent = `🚗 ${car.name}（${car.plate}）`;
   document.getElementById('main-sub').textContent =
-    `${state.driver1Name} / ${state.driver2Name}　${state.weather}　${todayJP()}`;
+    `${state.currentDriver1||state.driver1Name} / ${state.currentDriver2||state.driver2Name}　${state.weather}　${todayJP()}`;
   renderRideTable();
   renderTotals();
+
+  // スタッフ変更バナー復元
+  if (state.staffChanges && state.staffChanges.length > 0) {
+    const last = state.staffChanges[state.staffChanges.length - 1];
+    const bar = document.getElementById('staff-change-bar');
+    bar.classList.remove('hidden');
+    bar.textContent = `👤 スタッフ変更 ${last.time}〜 ${last.newName}（${last.role === 'driver2' ? '随行' : '2種'}）に変更`;
+  }
 }
+
 function renderRideTable() {
   const tbody  = document.getElementById('ride-tbody');
   const noRow  = document.getElementById('no-ride-row');
@@ -823,7 +1059,7 @@ function renderRideTable() {
     const payLabel = r.payment === 'cash' ? '現金' : 'カード等';
     const distStr  = r.distance > 0 ? r.distance.toFixed(1)+'km' : '—';
     const durStr   = r.durationMin > 0 ? r.durationMin+'分' : '—';
-    // 出発地マップリンク（GPS座標 → SPOTSデータ → 住所検索の順で優先）
+    // 出発地マップリンク（GPS優先）
     let depUrl;
     if (r.depLat) {
       depUrl = `https://maps.google.com/?q=${r.depLat},${r.depLng}`;
@@ -831,37 +1067,34 @@ function renderRideTable() {
       const spot = SPOTS[r.departure];
       depUrl = spot
         ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
-        : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.departure||''))}`;
+        : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
     }
-    const depCell = r.departure
-      ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
-    // 到着地マップリンク（GPS座標があれば使う）
+    const depCell = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
+    // 到着地マップリンク（GPS優先）
     const destUrl = r.arrivalLat
       ? `https://maps.google.com/?q=${r.arrivalLat},${r.arrivalLng}`
-      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.arrivalPlace||r.destination||''))}`;
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.arrivalPlace||r.destination||''))}`;
     const destLabel = r.arrivalPlace || r.destination || '—';
-    const destCell  = destLabel !== '—'
-      ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
-    // 経路リンク（出発GPS → 到着GPS）
+    const destCell  = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+    // 経路リンク
     const routeUrl = (r.depLat && r.arrivalLat)
       ? `https://maps.google.com/maps/dir/${r.depLat},${r.depLng}/${r.arrivalLat},${r.arrivalLng}`
       : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrivalPlace||r.destination||'')}`;
     const hasRoute = r.arrivalLat || r.destination || r.arrivalPlace;
-    const routeCell = hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—';
     return `<tr>
       <td>${i+1}</td>
       <td>${r.depTime||'—'}</td>
       <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${depCell}</td>
       <td>${r.arrTime||'—'}</td>
       <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${destCell}</td>
-      <td>${durStr}</td>
-      <td>${distStr}</td>
+      <td>${durStr}</td><td>${distStr}</td>
       <td style="font-weight:700">¥${r.fare.toLocaleString()}</td>
       <td class="${payClass}">${payLabel}</td>
-      <td>${routeCell}</td>
+      <td>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
     </tr>`;
   }).join('');
 }
+
 function renderTotals() {
   let allTotal = 0, cashTotal = 0, cashlessTotal = 0;
   state.rides.forEach(r => {
@@ -894,9 +1127,8 @@ function startNewRide() {
   const seq = state.rides.length + 1;
   document.getElementById('ride-title').textContent = `🚗 代行 #${seq}`;
   document.getElementById('ride-sub').textContent =
-    `${CARS[state.car].name} | ${state.driver1Name} / ${state.driver2Name}`;
+    `${CARS[state.car].name} | ${state.currentDriver1||state.driver1Name} / ${state.currentDriver2||state.driver2Name}`;
 
-  // フォームリセット
   ['ride-customer','ride-departure','ride-destination','ride-notes'].forEach(id => {
     document.getElementById(id).value = '';
   });
@@ -908,10 +1140,8 @@ function startNewRide() {
   document.getElementById('gps-dot').classList.add('on');
   document.getElementById('gps-text').textContent = 'GPS: 待機中';
 
-  // 料金タイプ初期化
   syncFareTypeBtns('fare-type-group',   'faretype',  rideFareType);
   syncFareTypeBtns('fare-type-driving', 'faretype2', rideFareType);
-  // 支払初期化
   document.querySelectorAll('#payment-group .radio-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.pay === 'cash');
   });
@@ -973,7 +1203,6 @@ async function doArrive() {
   document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
   document.getElementById('fare-edit').value = rideFare;
 
-  // 到着地の逆ジオコーディング
   let arrivalPlace = '', arrivalAddr = '', arrivalLat = null, arrivalLng = null;
   if (rideCurrentLat) {
     arrivalLat = rideCurrentLat; arrivalLng = rideCurrentLng;
@@ -989,10 +1218,8 @@ async function doArrive() {
 
   state._tmpRide = {
     seq: state.rides.length + 1,
-    depTime:     rideStartTime ? rideStartTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '',
-    arrTime:     arrStr,
-    durationMin: durMin,
-    distance:    rideDist,
+    depTime: rideStartTime ? rideStartTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '',
+    arrTime: arrStr, durationMin: durMin, distance: rideDist,
     arrivalPlace, arrivalLat, arrivalLng
   };
 
@@ -1002,16 +1229,18 @@ async function doArrive() {
 }
 
 function doCompleteRide() {
-  const fareVal   = parseInt(document.getElementById('fare-edit').value) || rideFare;
-  const notes     = document.getElementById('ride-notes').value;
-  const customer  = document.getElementById('ride-customer').value;
-  const departure = document.getElementById('ride-departure').value;
+  const fareVal    = parseInt(document.getElementById('fare-edit').value) || rideFare;
+  const notes      = document.getElementById('ride-notes').value;
+  const customer   = document.getElementById('ride-customer').value;
+  const departure  = document.getElementById('ride-departure').value;
   const destination = document.getElementById('ride-destination').value;
 
   const ride = {
     ...state._tmpRide, customer, departure, destination,
     fare: fareVal, payment: ridePayment, notes,
-    depLat, depLng
+    depLat, depLng,
+    driver1: state.currentDriver1 || state.driver1Name,
+    driver2: state.currentDriver2 || state.driver2Name
   };
   state.rides.push(ride);
   state._tmpRide = null;
@@ -1038,7 +1267,6 @@ function doCompleteRide() {
 function onGpsPos(pos) {
   const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
   rideCurrentLat = lat; rideCurrentLng = lng;
-  // 出発地GPS記録（最初の精度OK位置を保存）
   if (isFirstGpsPos && acc < 200) {
     depLat = lat; depLng = lng; isFirstGpsPos = false;
   }
@@ -1062,7 +1290,7 @@ function onGpsErr(err) {
   document.getElementById('gps-text').textContent = msgs[err.code] || 'GPSエラー';
 }
 
-// 逆ジオコーディング（OpenStreetMap Nominatim）
+// 逆ジオコーディング
 async function reverseGeocode(lat, lng) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ja`;
@@ -1101,23 +1329,19 @@ function initEndShift() {
   `;
   document.getElementById('endshift-tbody').innerHTML = rides.map((r,i) => {
     const payLabel = r.payment === 'cash' ? '現金' : 'カード等';
-    // 出発地リンク
     let depUrl2;
-    if (r.depLat) {
-      depUrl2 = `https://maps.google.com/?q=${r.depLat},${r.depLng}`;
-    } else {
-      const spot2 = SPOTS[r.departure];
-      depUrl2 = spot2 ? `https://maps.google.com/?q=${spot2.lat},${spot2.lng}`
-                      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.departure||''))}`;
+    if (r.depLat) { depUrl2 = `https://maps.google.com/?q=${r.depLat},${r.depLng}`; }
+    else {
+      const sp = SPOTS[r.departure];
+      depUrl2 = sp ? `https://maps.google.com/?q=${sp.lat},${sp.lng}`
+                   : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
     }
     const depCell2 = r.departure ? `<a href="${depUrl2}" target="_blank">${r.departure}</a>` : '—';
-    // 到着地リンク
     const destUrl2 = r.arrivalLat
       ? `https://maps.google.com/?q=${r.arrivalLat},${r.arrivalLng}`
-      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + (r.arrivalPlace||r.destination||''))}`;
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.arrivalPlace||r.destination||''))}`;
     const destLabel2 = r.arrivalPlace || r.destination || '—';
     const destCell2 = destLabel2 !== '—' ? `<a href="${destUrl2}" target="_blank">${destLabel2}</a>` : '—';
-    // 経路リンク
     const routeUrl2 = (r.depLat && r.arrivalLat)
       ? `https://maps.google.com/maps/dir/${r.depLat},${r.depLng}/${r.arrivalLat},${r.arrivalLng}`
       : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrivalPlace||r.destination||'')}`;
@@ -1134,6 +1358,7 @@ function initEndShift() {
     </tr>`;
   }).join('');
 }
+
 async function confirmEndShift() {
   const endMeterInput = document.getElementById('end-meter').value.trim();
   if (!endMeterInput) { alert('終業kmを入力してください'); return; }
@@ -1148,11 +1373,13 @@ async function confirmEndShift() {
     });
   }
   await pushVehicle('waiting');
+  if (rideSyncInterval) { clearInterval(rideSyncInterval); rideSyncInterval = null; }
   clearState();
   alert('お疲れさまでした！退勤処理が完了しました。');
   state = {
     screen:'setup', car:'A', driver1Name:'', driver1Time:'20:00',
-    driver2Name:'', driver2Time:'20:00', weather:'晴れ',
+    driver2Name:'', driver2Time:'20:00', currentDriver1:'', currentDriver2:'',
+    staffChanges:[], weather:'晴れ',
     startMeter:0, shiftId:null, shiftDate:'', rides:[], fareType:'general'
   };
   showScreen('setup');
@@ -1183,7 +1410,7 @@ function haversine(lat1,lon1,lat2,lon2) {
 }
 
 // ============================================================
-// Supabase: vehicle 更新
+// Vehicle 更新
 // ============================================================
 async function pushVehicle(status) {
   await sbUpsert('/rest/v1/vehicles', {
@@ -1204,42 +1431,88 @@ async function pushVehicleLocation(lat,lng) {
 }
 
 // ============================================================
-// カスタム出発地ドロップダウン
+// 配車依頼ポーリング
+// ============================================================
+let pendingReqId = null;
+
+async function checkForRequests() {
+  if (!state.car || state.screen === 'setup') return;
+  const carId = CARS[state.car].id;
+  const data = await sbGet(`/rest/v1/requests?car_id=eq.${carId}&status=eq.pending&order=created_at.desc&limit=1`);
+  if (!data) return;
+  if (data.length > 0) {
+    const req = data[0];
+    if (req.id !== pendingReqId) {
+      pendingReqId = req.id;
+      document.getElementById('req-content').textContent =
+        `お客様：${req.customer_name||'—'}　場所：${req.pickup||'—'}　→　${req.destination||'—'}`;
+      document.getElementById('req-banner').classList.remove('hidden');
+      // バナー表示でページトップにスクロール
+      window.scrollTo(0, 0);
+    }
+  } else {
+    document.getElementById('req-banner').classList.add('hidden');
+    pendingReqId = null;
+  }
+}
+
+async function respondToRequest(status) {
+  if (!pendingReqId) return;
+  await sbPatch(`/rest/v1/requests?id=eq.${pendingReqId}`, {
+    status, accepted_at: new Date().toISOString()
+  });
+  document.getElementById('req-banner').classList.add('hidden');
+  pendingReqId = null;
+}
+
+// ============================================================
+// カスタム出発地ドロップダウン（スマホ対応・スクロール検出）
 // ============================================================
 function initDepartureDropdown() {
   const input = document.getElementById('ride-departure');
   const list  = document.getElementById('dep-list');
   const allSpots = Object.keys(SPOTS);
+  let listTouchStartY = 0;
+  let listTouchMoved  = false;
 
   function renderList(filter) {
     const q = (filter || '').trim();
     const items = q ? allSpots.filter(s => s.includes(q)) : allSpots;
     if (items.length === 0) { list.classList.add('hidden'); return; }
     list.innerHTML = items.map(s => `<div class="dep-list-item">${s}</div>`).join('');
-    list.querySelectorAll('.dep-list-item').forEach(item => {
-      // PC（マウス）
-      item.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        input.value = this.textContent;
-        list.classList.add('hidden');
-      });
-      // スマホ（タッチ）
-      item.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        input.value = this.textContent;
-        list.classList.add('hidden');
-        input.blur();
-      });
-    });
     list.classList.remove('hidden');
   }
+
+  // スクロール vs タップ 判定
+  list.addEventListener('touchstart', (e) => {
+    listTouchStartY = e.touches[0].clientY;
+    listTouchMoved  = false;
+  }, { passive: true });
+  list.addEventListener('touchmove', (e) => {
+    if (Math.abs(e.touches[0].clientY - listTouchStartY) > 8) listTouchMoved = true;
+  }, { passive: true });
+  list.addEventListener('touchend', (e) => {
+    if (listTouchMoved) return; // スクロール中は無視
+    const item = e.target.closest('.dep-list-item');
+    if (!item) return;
+    e.preventDefault();
+    input.value = item.textContent;
+    list.classList.add('hidden');
+    input.blur();
+  });
+  // PC（マウス）
+  list.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.dep-list-item');
+    if (!item) return;
+    e.preventDefault();
+    input.value = item.textContent;
+    list.classList.add('hidden');
+  });
 
   input.addEventListener('focus', () => renderList(input.value));
   input.addEventListener('click', () => renderList(input.value));
   input.addEventListener('input', () => renderList(input.value));
-  input.addEventListener('blur', () => {
-    setTimeout(() => list.classList.add('hidden'), 300);
-  });
+  input.addEventListener('blur',  () => setTimeout(() => list.classList.add('hidden'), 300));
 }
 
 // ============================================================
@@ -1253,6 +1526,42 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-new-ride').addEventListener('click', startNewRide);
   document.getElementById('btn-go-endshift').addEventListener('click', () => {
     initEndShift(); showScreen('endshift');
+  });
+  document.getElementById('btn-staff-change').addEventListener('click', openStaffChangeModal);
+  document.getElementById('btn-share-shift').addEventListener('click', () => {
+    if (!state.shiftId) { alert('シフトがまだ開始されていません'); return; }
+    const url = `${location.origin}${location.pathname}?join=${CARS[state.car].id}`;
+    if (navigator.share) {
+      navigator.share({ title: 'A1シフト参加', url }).catch(()=>{});
+    } else {
+      navigator.clipboard.writeText(url)
+        .then(() => alert('シフト共有URLをコピーしました！\n' + url))
+        .catch(() => prompt('このURLをコピーしてください：', url));
+    }
+  });
+
+  // ── スタッフ変更モーダル
+  document.getElementById('sc-role').addEventListener('change', function() {
+    document.getElementById('sc-row2').style.display = this.value === 'driver2' ? '' : 'none';
+    document.getElementById('sc-row1').style.display = this.value === 'driver1' ? '' : 'none';
+  });
+  document.getElementById('btn-sc-ok').addEventListener('click', applyStaffChange);
+  document.getElementById('btn-sc-cancel').addEventListener('click', () => {
+    document.getElementById('modal-staff').classList.add('hidden');
+  });
+
+  // ── シフト参加モーダル
+  document.getElementById('btn-join-shift').addEventListener('click', openJoinModal);
+  document.querySelectorAll('#join-car-group .radio-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#join-car-group .radio-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      joinSelectedCar = this.dataset.joincar;
+    });
+  });
+  document.getElementById('btn-join-ok').addEventListener('click', joinExistingShift);
+  document.getElementById('btn-join-cancel').addEventListener('click', () => {
+    document.getElementById('modal-join').classList.add('hidden');
   });
 
   // ── 代行画面
@@ -1273,19 +1582,16 @@ document.addEventListener('DOMContentLoaded', function() {
       state.fareType = rideFareType;
     });
   });
-
-  // 料金タイプ（走行中 - リアルタイム再計算）
+  // 料金タイプ（走行中）
   document.querySelectorAll('#fare-type-driving .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       syncFareTypeBtns('fare-type-driving', 'faretype2', this.dataset.faretype2);
       rideFareType = this.dataset.faretype2;
       state.fareType = rideFareType;
-      // 即時再計算
       rideFare = calcFare(rideDist, rideFareType);
       document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
     });
   });
-
   // 支払方法
   document.querySelectorAll('#payment-group .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -1294,23 +1600,19 @@ document.addEventListener('DOMContentLoaded', function() {
       ridePayment = this.dataset.pay;
     });
   });
-
-  // 料金 ±ボタン
+  // 料金±ボタン
   document.querySelectorAll('.adj-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      const delta = parseInt(this.dataset.adj);
-      rideFare = Math.max(0, rideFare + delta);
+      rideFare = Math.max(0, rideFare + parseInt(this.dataset.adj));
       document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
       document.getElementById('fare-edit').value = rideFare;
     });
   });
-
   // 料金手動入力
   document.getElementById('fare-edit').addEventListener('input', function() {
     rideFare = parseInt(this.value) || 0;
     document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
   });
-
   // 出発地マップボタン
   document.getElementById('dep-map-btn').addEventListener('click', () => {
     const name = document.getElementById('ride-departure').value.trim();
@@ -1328,14 +1630,33 @@ document.addEventListener('DOMContentLoaded', function() {
     showScreen('main'); renderMain();
   });
 
-  // ── LocalStorage復元
+  // ── 配車依頼
+  document.getElementById('btn-req-accept').addEventListener('click', () => respondToRequest('accepted'));
+  document.getElementById('btn-req-decline').addEventListener('click', () => respondToRequest('declined'));
+
+  // ── LocalStorage 復元
   const restored = loadState();
   if (restored && state.screen && state.screen !== 'setup') {
     showScreen(state.screen);
     if (state.screen === 'main') renderMain();
+    if (state.shiftId) startRideSync();
   } else {
     showScreen('setup');
   }
+
+  // ── URL パラメータで自動参加
+  const urlParams = new URLSearchParams(location.search);
+  const joinParam = urlParams.get('join');
+  if (joinParam) {
+    const carLetter = joinParam === 'car_a' ? 'A' : joinParam === 'car_b' ? 'B' : joinParam === 'car_c' ? 'C' : null;
+    if (carLetter) {
+      joinSelectedCar = carLetter;
+      joinExistingShift();
+    }
+  }
+
+  // ── 配車依頼チェック（10秒ごと）
+  setInterval(checkForRequests, 10000);
 });
 </script>
 </body>
