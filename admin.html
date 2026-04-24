@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A1運転代行 管理者メニュー</title>
+  <style>
+    :root {
+      --bg: #0f172a; --card: #1e293b; --border: #334155;
+      --accent: #3b82f6; --green: #22c55e; --red: #ef4444;
+      --yellow: #f59e0b; --purple: #a855f7; --text: #f1f5f9; --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system,'Helvetica Neue','Hiragino Sans',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--card); padding: 10px 16px;
+      border-bottom: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    header h1 { font-size: 15px; font-weight: 700; }
+    .back-link { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 700; }
+
+    /* タブ */
+    .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .tab {
+      padding: 12px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+      color: var(--muted); white-space: nowrap; border-bottom: 3px solid transparent;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* セクション・カード */
+    .section { background: var(--card); margin: 10px 8px; border-radius: 12px; padding: 14px 16px; }
+    .section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 12px; }
+    .card { background: var(--bg); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); }
+    .card:last-child { margin-bottom: 0; }
+
+    /* フォーム */
+    .input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .input-row:last-child { margin-bottom: 0; }
+    .input-row label { font-size: 12px; color: var(--muted); width: 72px; flex-shrink: 0; font-weight: 600; }
+    .input-row input, .input-row select, .input-row textarea {
+      flex: 1; padding: 9px 12px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+    }
+    .input-row input:focus, .input-row select:focus, .input-row textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
+    select option { background: var(--card); }
+
+    /* ボタン */
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+    .btn-blue   { background: var(--accent); color: #fff; }
+    .btn-green  { background: var(--green);  color: #fff; }
+    .btn-red    { background: var(--red);    color: #fff; }
+    .btn-gray   { background: #475569; color: #fff; }
+    .btn-yellow { background: var(--yellow); color: #000; }
+    .btn:active { opacity: .8; }
+    .btn:disabled { opacity: .4; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; }
+    .btn-full { display: block; width: 100%; padding: 14px; font-size: 15px; font-weight: 800; border-radius: 10px; margin-top: 12px; }
+
+    /* バッジ */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;
+    }
+    .badge-2shu  { background: rgba(59,130,246,.2);  color: var(--accent); }
+    .badge-zuiko { background: rgba(168,85,247,.2);  color: var(--purple); }
+    .badge-comm  { background: rgba(245,158,11,.2);  color: var(--yellow); }
+    .badge-hour  { background: rgba(34,197,94,.2);   color: var(--green); }
+    .badge-paid  { background: rgba(34,197,94,.15);  color: var(--green); }
+    .badge-unpaid{ background: rgba(239,68,68,.15);  color: var(--red); }
+
+    /* スタッフリスト */
+    .staff-row {
+      display: flex; align-items: center; gap: 8px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .staff-row:last-child { border-bottom: none; }
+    .staff-name { font-size: 14px; font-weight: 700; flex: 1; }
+    .staff-meta { font-size: 11px; color: var(--muted); }
+
+    /* 場所リスト */
+    .loc-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .loc-row:last-child { border-bottom: none; }
+    .loc-name { font-size: 13px; font-weight: 700; flex: 1; }
+    .loc-coords { font-size: 10px; color: var(--muted); }
+
+    /* 勤怠テーブル */
+    .att-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .att-table th { background: var(--bg); padding: 6px 8px; text-align: center; color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .att-table td { padding: 8px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
+    .att-table tr:last-child td { border-bottom: none; }
+    .att-table input[type=time], .att-table input[type=number] {
+      padding: 4px 6px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 12px; width: 80px;
+    }
+    .att-table input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
+
+    /* 給料サマリー */
+    .pay-summary {
+      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3);
+      border-radius: 10px; padding: 12px 14px; margin-top: 12px;
+    }
+    .pay-summary .ps-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+    .pay-summary .ps-total { font-size: 20px; font-weight: 800; color: var(--yellow); }
+
+    /* SQL案内 */
+    .sql-box {
+      background: #111827; border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; font-family: monospace; font-size: 11px; color: #86efac;
+      overflow-x: auto; white-space: pre; margin-top: 8px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ 管理者メニュー</h1>
+  <a href="manager.html" class="back-link">← 管理画面</a>
+</header>
+
+<!-- タブ -->
+<div class="tabs">
+  <div class="tab active" data-tab="staff">👤 スタッフ管理</div>
+  <div class="tab" data-tab="attend">📅 勤怠・給料</div>
+  <div class="tab" data-tab="location">📍 場所管理</div>
+  <div class="tab" data-tab="setup">🔧 初期設定</div>
+</div>
+
+<!-- ============================================================
+     TAB: スタッフ管理
+     ============================================================ -->
+<div id="tab-staff" class="tab-panel active">
+
+  <!-- 新規追加フォーム -->
+  <div class="section">
+    <div class="section-title">➕ スタッフ追加</div>
+    <div class="input-row">
+      <label>氏名</label>
+      <input type="text" id="ns-name" placeholder="例: 山田 太郎">
+    </div>
+    <div class="input-row">
+      <label>区分</label>
+      <select id="ns-role">
+        <option value="2種">2種メンバー</option>
+        <option value="随行">随行メンバー</option>
+      </select>
+    </div>
+    <div class="input-row">
+      <label>給与体系</label>
+      <select id="ns-paytype">
+        <option value="commission">歩合制（売上30%）</option>
+        <option value="hourly">時給制</option>
+      </select>
+    </div>
+    <div class="input-row" id="ns-rate-row" style="display:none">
+      <label>時給（円）</label>
+      <input type="number" id="ns-rate" value="900" inputmode="numeric">
+    </div>
+    <button class="btn btn-blue btn-full" id="btn-add-staff">➕ スタッフを追加</button>
+  </div>
+
+  <!-- スタッフ一覧 -->
+  <div class="section">
+    <div class="section-title">👥 スタッフ一覧</div>
+    <div id="staff-list">
+      <div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">読み込み中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TAB: 勤怠・給料管理
+     ============================================================ -->
+<div id="tab-attend" class="tab-panel">
+
+  <div class="section">
+    <div class="section-title">📅 集計日付</div>
+    <div class="input-row">
+      <label>日付</label>
+      <input type="date" id="att-date">
+    </div>
+    <button class="btn btn-blue" id="btn-load-attend" style="width:100%;padding:12px;margin-top:8px">📋 この日の勤怠を読み込む</button>
+  </div>
+
+  <div class="section" id="attend-section" style="display:none">
+    <div class="section-title">⏱ 出退勤・給料入力</div>
+    <div style="overflow-x:auto">
+      <table class="att-table">
+        <thead>
+          <tr>
+            <th>氏名</th><th>区分</th><th>給与</th>
+            <th>出勤</th><th>退勤</th><th>時間</th>
+            <th>売上</th><th>給料</th><th>渡済</th>
+          </tr>
+        </thead>
+        <tbody id="attend-tbody"></tbody>
+      </table>
+    </div>
+    <button class="btn btn-green btn-full" id="btn-save-attend">💾 勤怠を保存</button>
+  </div>
+
+  <!-- 給料履歴 -->
+  <div class="section">
+    <div class="section-title">📜 給料支払い履歴</div>
+    <div class="input-row">
+      <label>スタッフ</label>
+      <select id="hist-staff">
+        <option value="">全員</option>
+      </select>
+    </div>
+    <button class="btn btn-gray" id="btn-load-hist" style="width:100%;padding:10px;margin-top:8px">📋 履歴を表示</button>
+    <div id="hist-list" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TAB: 場所管理
+     ============================================================ -->
+<div id="tab-location" class="tab-panel">
+
+  <!-- 新規追加 -->
+  <div class="section">
+    <div class="section-title">➕ 場所を追加・編集</div>
+    <div class="input-row">
+      <label>場所名</label>
+      <input type="text" id="nl-name" placeholder="例: ○○ホテル駐車場">
+    </div>
+    <div class="input-row">
+      <label>緯度</label>
+      <input type="number" id="nl-lat" placeholder="24.XXXX" step="0.0001">
+    </div>
+    <div class="input-row">
+      <label>経度</label>
+      <input type="number" id="nl-lng" placeholder="124.XXXX" step="0.0001">
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+      ※ 座標はGoogleマップ → 右クリック → 「この場所について」で確認できます
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-blue" id="btn-add-loc" style="flex:1">➕ 追加</button>
+      <button class="btn btn-gray" id="btn-gps-loc" style="flex:1">📍 現在地を取得</button>
+    </div>
+    <input type="hidden" id="nl-edit-id">
+  </div>
+
+  <!-- 登録済み一覧 -->
+  <div class="section">
+    <div class="section-title">📍 登録済み場所一覧</div>
+    <div id="loc-list">
+      <div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">読み込み中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TAB: 初期設定（SQL）
+     ============================================================ -->
+<div id="tab-setup" class="tab-panel">
+  <div class="section">
+    <div class="section-title">🔧 Supabase テーブル作成SQL</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">
+      以下のSQLをSupabase → SQL Editor で実行してください。
+    </div>
+    <div class="sql-box">CREATE TABLE IF NOT EXISTS requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  car_id TEXT NOT NULL,
+  customer_name TEXT,
+  pickup TEXT,
+  destination TEXT,
+  note TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ
+);
+ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_all" ON requests FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS locations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  lat DOUBLE PRECISION,
+  lng DOUBLE PRECISION,
+  category TEXT DEFAULT 'general',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_all" ON locations FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS staff (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL DEFAULT '随行',
+  pay_type TEXT NOT NULL DEFAULT 'hourly',
+  hourly_rate INTEGER DEFAULT 900,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_all" ON staff FOR ALL USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS attendance (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  staff_id UUID,
+  staff_name TEXT NOT NULL,
+  work_date DATE NOT NULL,
+  clock_in TIME,
+  clock_out TIME,
+  hours NUMERIC DEFAULT 0,
+  total_sales INTEGER DEFAULT 0,
+  commission INTEGER DEFAULT 0,
+  hourly_pay INTEGER DEFAULT 0,
+  total_pay INTEGER DEFAULT 0,
+  paid BOOLEAN DEFAULT false,
+  paid_date DATE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_all" ON attendance FOR ALL USING (true) WITH CHECK (true);</div>
+    <button class="btn btn-blue btn-full" id="btn-init-staff">👥 デフォルトスタッフを一括登録</button>
+    <div id="init-msg" style="margin-top:8px;font-size:12px;color:var(--green);text-align:center"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
+
+// デフォルトスタッフ
+const DEFAULT_STAFF = [
+  { name: '社長',  role: '2種', pay_type: 'commission', hourly_rate: 900 },
+  { name: 'ホズミ', role: '2種', pay_type: 'commission', hourly_rate: 900 },
+  { name: '茅原',  role: '2種', pay_type: 'commission', hourly_rate: 900 },
+  { name: '金城',  role: '2種', pay_type: 'commission', hourly_rate: 900 },
+  { name: '譜久島', role: '随行', pay_type: 'commission', hourly_rate: 900 },
+  { name: '崎山',  role: '随行', pay_type: 'commission', hourly_rate: 900 },
+  { name: 'タカヒロ', role: '随行', pay_type: 'hourly', hourly_rate: 900 },
+  { name: '上原',  role: '随行', pay_type: 'hourly', hourly_rate: 900 },
+  { name: '大山',  role: '随行', pay_type: 'hourly', hourly_rate: 900 },
+  { name: '西川',  role: '随行', pay_type: 'hourly', hourly_rate: 900 },
+];
+
+// ============================================================
+// Supabase ヘルパー
+// ============================================================
+async function sbGet(path) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+async function sbPost(path, body, prefer) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': prefer || 'return=representation'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) return null;
+    const t = await r.text(); return t ? JSON.parse(t) : null;
+  } catch(e) { return null; }
+}
+async function sbPatch(path, body) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(body)
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+async function sbDelete(path) {
+  try {
+    await fetch(SUPABASE_URL + path, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+  } catch(e) {}
+}
+async function sbUpsert(path, body) {
+  return sbPost(path, body, 'resolution=merge-duplicates,return=representation');
+}
+
+// ============================================================
+// タブ切り替え
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// ============================================================
+// ★ スタッフ管理
+// ============================================================
+let staffList = [];
+
+async function loadStaff() {
+  const data = await sbGet('/rest/v1/staff?is_active=eq.true&order=created_at.asc');
+  staffList = data || [];
+  renderStaffList();
+  updateStaffSelects();
+}
+
+function renderStaffList() {
+  const el = document.getElementById('staff-list');
+  if (staffList.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">スタッフが登録されていません</div>';
+    return;
+  }
+  el.innerHTML = staffList.map(s => {
+    const roleClass  = s.role === '2種' ? 'badge-2shu' : 'badge-zuiko';
+    const payClass   = s.pay_type === 'commission' ? 'badge-comm' : 'badge-hour';
+    const payLabel   = s.pay_type === 'commission' ? '歩合30%' : `時給¥${s.hourly_rate||900}`;
+    return `<div class="staff-row">
+      <div>
+        <div class="staff-name">${s.name}</div>
+        <div class="staff-meta" style="margin-top:4px">
+          <span class="badge ${roleClass}">${s.role}メンバー</span>
+          <span class="badge ${payClass}" style="margin-left:4px">${payLabel}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-gray btn-sm" onclick="editStaff('${s.id}')">✏️ 編集</button>
+        <button class="btn btn-red btn-sm" onclick="deleteStaff('${s.id}','${s.name}')">削除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editStaff(id) {
+  const s = staffList.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('ns-name').value    = s.name;
+  document.getElementById('ns-role').value    = s.role;
+  document.getElementById('ns-paytype').value = s.pay_type;
+  document.getElementById('ns-rate').value    = s.hourly_rate || 900;
+  document.getElementById('ns-rate-row').style.display = s.pay_type === 'hourly' ? '' : 'none';
+  document.getElementById('btn-add-staff').textContent = '💾 更新する';
+  document.getElementById('btn-add-staff').dataset.editId = id;
+  document.querySelector('[data-tab="staff"]').click();
+  window.scrollTo(0, 0);
+}
+
+async function deleteStaff(id, name) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  await sbPatch(`/rest/v1/staff?id=eq.${id}`, { is_active: false });
+  await loadStaff();
+}
+
+document.getElementById('ns-paytype').addEventListener('change', function() {
+  document.getElementById('ns-rate-row').style.display = this.value === 'hourly' ? '' : 'none';
+});
+
+document.getElementById('btn-add-staff').addEventListener('click', async function() {
+  const name    = document.getElementById('ns-name').value.trim();
+  const role    = document.getElementById('ns-role').value;
+  const payType = document.getElementById('ns-paytype').value;
+  const rate    = parseInt(document.getElementById('ns-rate').value) || 900;
+  if (!name) { alert('氏名を入力してください'); return; }
+
+  const editId = this.dataset.editId;
+  if (editId) {
+    await sbPatch(`/rest/v1/staff?id=eq.${editId}`, { name, role, pay_type: payType, hourly_rate: rate });
+    this.dataset.editId = '';
+    this.textContent = '➕ スタッフを追加';
+  } else {
+    await sbPost('/rest/v1/staff', { name, role, pay_type: payType, hourly_rate: rate, is_active: true }, 'return=minimal');
+  }
+  document.getElementById('ns-name').value = '';
+  await loadStaff();
+});
+
+// ============================================================
+// ★ 勤怠・給料管理
+// ============================================================
+let attendData = []; // 現在編集中の勤怠行
+
+function updateStaffSelects() {
+  const sel = document.getElementById('hist-staff');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全員</option>';
+  staffList.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.name; opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+// 今日の日付をデフォルトに
+document.getElementById('att-date').value = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+})();
+
+document.getElementById('btn-load-attend').addEventListener('click', loadAttendance);
+document.getElementById('btn-save-attend').addEventListener('click', saveAttendance);
+document.getElementById('btn-load-hist').addEventListener('click', loadPayHistory);
+
+async function loadAttendance() {
+  const date = document.getElementById('att-date').value;
+  if (!date) { alert('日付を選択してください'); return; }
+
+  // その日のシフトから出勤スタッフを特定
+  const shifts = await sbGet(`/rest/v1/shifts?date=eq.${date}`);
+  // その日の既存勤怠
+  const existing = await sbGet(`/rest/v1/attendance?work_date=eq.${date}&order=created_at.asc`) || [];
+  // その日の売上（rides から集計）
+  const rides = await sbGet(`/rest/v1/rides?date=eq.${date}`) || [];
+
+  // シフトから出勤者を抽出
+  const workedNames = new Set();
+  (shifts || []).forEach(s => {
+    if (s.driver1_name) workedNames.add(s.driver1_name);
+    if (s.driver2_name) workedNames.add(s.driver2_name);
+  });
+
+  // 売上を車ごとに集計
+  const salesByShift = {};
+  rides.forEach(r => {
+    salesByShift[r.car_id] = (salesByShift[r.car_id] || 0) + (r.fare || 0);
+  });
+
+  // 各スタッフの行を作成
+  attendData = [];
+  // 出勤スタッフ（シフトから）
+  workedNames.forEach(name => {
+    const staffMember = staffList.find(s => s.name === name);
+    const ex = existing.find(e => e.staff_name === name);
+    // その人が乗務した車のシフト
+    const myShift = (shifts || []).find(s => s.driver1_name === name || s.driver2_name === name);
+    const mySales = myShift ? (salesByShift[myShift.car_id] || 0) : 0;
+    attendData.push({
+      id: ex?.id || null,
+      name,
+      role: staffMember?.role || '—',
+      pay_type: staffMember?.pay_type || 'hourly',
+      hourly_rate: staffMember?.hourly_rate || 900,
+      clock_in:   ex?.clock_in || '',
+      clock_out:  ex?.clock_out || '',
+      hours:      ex?.hours || 0,
+      total_sales: ex?.total_sales || mySales,
+      paid:       ex?.paid || false,
+      paid_date:  ex?.paid_date || null
+    });
+  });
+
+  // 既存勤怠にあるがシフトにないスタッフも追加
+  existing.forEach(ex => {
+    if (!workedNames.has(ex.staff_name)) {
+      const staffMember = staffList.find(s => s.name === ex.staff_name);
+      attendData.push({
+        id: ex.id,
+        name: ex.staff_name,
+        role: staffMember?.role || '—',
+        pay_type: ex.pay_type || staffMember?.pay_type || 'hourly',
+        hourly_rate: staffMember?.hourly_rate || 900,
+        clock_in: ex.clock_in || '', clock_out: ex.clock_out || '',
+        hours: ex.hours || 0, total_sales: ex.total_sales || 0,
+        paid: ex.paid || false, paid_date: ex.paid_date || null
+      });
+    }
+  });
+
+  renderAttendTable();
+  document.getElementById('attend-section').style.display = '';
+}
+
+function calcHours(inTime, outTime) {
+  if (!inTime || !outTime) return 0;
+  const [ih, im] = inTime.split(':').map(Number);
+  const [oh, om] = outTime.split(':').map(Number);
+  let mins = (oh * 60 + om) - (ih * 60 + im);
+  if (mins < 0) mins += 24 * 60; // 深夜越え
+  return Math.round(mins / 60 * 10) / 10;
+}
+
+function calcPay(row) {
+  if (row.pay_type === 'commission') {
+    return Math.floor((row.total_sales || 0) * 0.3);
+  } else {
+    return Math.floor((row.hours || 0) * (row.hourly_rate || 900));
+  }
+}
+
+function renderAttendTable() {
+  const tbody = document.getElementById('attend-tbody');
+  tbody.innerHTML = attendData.map((row, i) => {
+    const hours = calcHours(row.clock_in, row.clock_out);
+    const pay   = calcPay({ ...row, hours });
+    const roleClass = row.role === '2種' ? 'badge-2shu' : 'badge-zuiko';
+    const payTypeLabel = row.pay_type === 'commission' ? '歩合' : `時給¥${row.hourly_rate}`;
+    return `<tr>
+      <td style="text-align:left;font-weight:700;white-space:nowrap">${row.name}</td>
+      <td><span class="badge ${roleClass}" style="font-size:9px">${row.role}</span></td>
+      <td style="font-size:10px;color:var(--muted)">${payTypeLabel}</td>
+      <td><input type="time" value="${row.clock_in||''}" onchange="updateAtt(${i},'clock_in',this.value)"></td>
+      <td><input type="time" value="${row.clock_out||''}" onchange="updateAtt(${i},'clock_out',this.value)"></td>
+      <td id="att-hours-${i}" style="font-weight:700">${hours > 0 ? hours+'h' : '—'}</td>
+      <td>
+        <input type="number" value="${row.total_sales||0}" style="width:70px"
+               onchange="updateAtt(${i},'total_sales',parseInt(this.value)||0)">
+      </td>
+      <td id="att-pay-${i}" style="font-weight:700;color:var(--yellow)">¥${pay.toLocaleString()}</td>
+      <td>
+        <input type="checkbox" ${row.paid ? 'checked' : ''}
+               onchange="updateAtt(${i},'paid',this.checked)">
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateAtt(i, field, value) {
+  attendData[i][field] = value;
+  // 時間・給料を再計算して表示
+  const row = attendData[i];
+  const hours = calcHours(row.clock_in, row.clock_out);
+  attendData[i].hours = hours;
+  const pay = calcPay({ ...row, hours });
+  const hEl = document.getElementById(`att-hours-${i}`);
+  const pEl = document.getElementById(`att-pay-${i}`);
+  if (hEl) hEl.textContent = hours > 0 ? hours + 'h' : '—';
+  if (pEl) pEl.textContent = '¥' + pay.toLocaleString();
+}
+
+async function saveAttendance() {
+  const date = document.getElementById('att-date').value;
+  if (!date) return;
+  const btn = document.getElementById('btn-save-attend');
+  btn.disabled = true; btn.textContent = '保存中...';
+
+  for (const row of attendData) {
+    const hours = calcHours(row.clock_in, row.clock_out);
+    const pay   = calcPay({ ...row, hours });
+    const commission = row.pay_type === 'commission' ? pay : 0;
+    const hourlyPay  = row.pay_type === 'hourly'     ? pay : 0;
+    const staffMember = staffList.find(s => s.name === row.name);
+    const today = new Date().toISOString().split('T')[0];
+
+    const body = {
+      staff_id:    staffMember?.id || null,
+      staff_name:  row.name,
+      work_date:   date,
+      clock_in:    row.clock_in || null,
+      clock_out:   row.clock_out || null,
+      hours,
+      total_sales: row.total_sales || 0,
+      commission,
+      hourly_pay:  hourlyPay,
+      total_pay:   pay,
+      paid:        row.paid || false,
+      paid_date:   row.paid ? today : null
+    };
+
+    if (row.id) {
+      await sbPatch(`/rest/v1/attendance?id=eq.${row.id}`, body);
+    } else {
+      const res = await sbPost('/rest/v1/attendance', body);
+      if (res && res[0]) attendData[attendData.indexOf(row)].id = res[0].id;
+    }
+  }
+  btn.disabled = false; btn.textContent = '💾 勤怠を保存';
+  alert('保存しました！');
+  await loadAttendance(); // 再読み込み
+}
+
+async function loadPayHistory() {
+  const staffName = document.getElementById('hist-staff').value;
+  let path = '/rest/v1/attendance?order=work_date.desc&limit=60';
+  if (staffName) path += `&staff_name=eq.${encodeURIComponent(staffName)}`;
+  const data = await sbGet(path) || [];
+  const el = document.getElementById('hist-list');
+  if (data.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;font-size:13px">履歴がありません</div>';
+    return;
+  }
+  el.innerHTML = data.map(r => {
+    const paidClass = r.paid ? 'badge-paid' : 'badge-unpaid';
+    const paidLabel = r.paid ? `✅ 渡済（${r.paid_date||'—'}）` : '⏳ 未払い';
+    const payType   = r.commission > 0 ? '歩合' : '時給';
+    return `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-weight:800;font-size:14px">${r.staff_name}</span>
+        <span class="badge ${paidClass}">${paidLabel}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.8">
+        📅 ${r.work_date}　⏱ ${r.clock_in||'—'} 〜 ${r.clock_out||'—'}（${r.hours||0}h）<br>
+        💰 売上：¥${(r.total_sales||0).toLocaleString()}　${payType}：<span style="color:var(--yellow);font-weight:700">¥${(r.total_pay||0).toLocaleString()}</span>
+      </div>
+      ${!r.paid ? `<button class="btn btn-green btn-sm" style="margin-top:8px" onclick="markPaid('${r.id}')">✅ 渡したとしてマーク</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function markPaid(id) {
+  const today = new Date().toISOString().split('T')[0];
+  await sbPatch(`/rest/v1/attendance?id=eq.${id}`, { paid: true, paid_date: today });
+  await loadPayHistory();
+}
+
+// ============================================================
+// ★ 場所管理
+// ============================================================
+let locList = [];
+let locEditId = null;
+
+async function loadLocations() {
+  const data = await sbGet('/rest/v1/locations?order=name.asc') || [];
+  locList = data;
+  renderLocList();
+}
+
+function renderLocList() {
+  const el = document.getElementById('loc-list');
+  if (locList.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">登録なし（初期スポットはスタッフアプリ内に内蔵済み）</div>';
+    return;
+  }
+  el.innerHTML = locList.map(l => `<div class="loc-row">
+    <div>
+      <div class="loc-name">${l.name}</div>
+      <div class="loc-coords">lat: ${l.lat||'—'}, lng: ${l.lng||'—'}</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      ${l.lat ? `<a href="https://maps.google.com/?q=${l.lat},${l.lng}" target="_blank" class="btn btn-gray btn-sm">🗺</a>` : ''}
+      <button class="btn btn-gray btn-sm" onclick="editLoc('${l.id}')">✏️</button>
+      <button class="btn btn-red btn-sm" onclick="deleteLoc('${l.id}','${l.name}')">削除</button>
+    </div>
+  </div>`).join('');
+}
+
+function editLoc(id) {
+  const l = locList.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('nl-name').value = l.name;
+  document.getElementById('nl-lat').value  = l.lat || '';
+  document.getElementById('nl-lng').value  = l.lng || '';
+  document.getElementById('nl-edit-id').value = id;
+  document.getElementById('btn-add-loc').textContent = '💾 更新';
+  document.querySelector('[data-tab="location"]').click();
+  window.scrollTo(0, 0);
+}
+
+async function deleteLoc(id, name) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  await sbDelete(`/rest/v1/locations?id=eq.${id}`);
+  await loadLocations();
+}
+
+document.getElementById('btn-add-loc').addEventListener('click', async function() {
+  const name   = document.getElementById('nl-name').value.trim();
+  const lat    = parseFloat(document.getElementById('nl-lat').value) || null;
+  const lng    = parseFloat(document.getElementById('nl-lng').value) || null;
+  const editId = document.getElementById('nl-edit-id').value;
+  if (!name) { alert('場所名を入力してください'); return; }
+  if (editId) {
+    await sbPatch(`/rest/v1/locations?id=eq.${editId}`, { name, lat, lng });
+    document.getElementById('nl-edit-id').value = '';
+    this.textContent = '➕ 追加';
+  } else {
+    await sbPost('/rest/v1/locations', { name, lat, lng }, 'return=minimal');
+  }
+  document.getElementById('nl-name').value = '';
+  document.getElementById('nl-lat').value  = '';
+  document.getElementById('nl-lng').value  = '';
+  await loadLocations();
+});
+
+document.getElementById('btn-gps-loc').addEventListener('click', function() {
+  if (!navigator.geolocation) { alert('GPSが使えません'); return; }
+  this.textContent = '取得中...'; this.disabled = true;
+  const btn = this;
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('nl-lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('nl-lng').value = pos.coords.longitude.toFixed(6);
+    btn.textContent = '📍 現在地を取得'; btn.disabled = false;
+  }, err => {
+    alert('GPS取得失敗: ' + err.message);
+    btn.textContent = '📍 現在地を取得'; btn.disabled = false;
+  }, { enableHighAccuracy: true });
+});
+
+// ============================================================
+// ★ 初期スタッフ一括登録
+// ============================================================
+document.getElementById('btn-init-staff').addEventListener('click', async function() {
+  this.disabled = true; this.textContent = '登録中...';
+  let count = 0;
+  for (const s of DEFAULT_STAFF) {
+    const res = await sbPost('/rest/v1/staff', s, 'resolution=merge-duplicates,return=minimal');
+    if (res !== null) count++;
+  }
+  this.disabled = false; this.textContent = '👥 デフォルトスタッフを一括登録';
+  document.getElementById('init-msg').textContent = `✅ ${DEFAULT_STAFF.length}名を登録しました`;
+  await loadStaff();
+});
+
+// ============================================================
+// 初期化
+// ============================================================
+loadStaff();
+loadLocations();
+</script>
+</body>
+</html>

@@ -166,13 +166,43 @@
     .no-shift-msg {
       text-align: center; padding: 20px; color: var(--muted); font-size: 13px;
     }
+
+    /* お迎え場所ドロップダウン */
+    .pick-wrapper { position: relative; flex: 1; }
+    .pick-list {
+      position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+      background: var(--card); border: 2px solid var(--accent);
+      border-radius: 10px; max-height: 200px; overflow-y: auto;
+      z-index: 400; box-shadow: 0 6px 20px rgba(0,0,0,.5);
+    }
+    .pick-list-item {
+      padding: 12px 14px; font-size: 13px; border-bottom: 1px solid var(--border);
+      cursor: pointer; touch-action: manipulation; user-select: none;
+    }
+    .pick-list-item:last-child { border-bottom: none; }
+    .pick-list-item:active { background: rgba(59,130,246,.2); }
+    .map-mini-btn {
+      width: 36px; height: 36px; border: none; border-radius: 8px;
+      background: var(--accent); color: #fff; font-size: 16px;
+      cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; touch-action: manipulation;
+    }
+    .admin-link {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-decoration: none; padding: 4px 10px; border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .admin-link:hover { color: var(--text); border-color: var(--text); }
   </style>
 </head>
 <body>
 
 <header>
   <h1>🗺 A1運転代行 管理画面</h1>
-  <span class="conn-badge conn-off" id="conn-badge">接続中...</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="conn-badge conn-off" id="conn-badge">接続中...</span>
+    <a href="admin.html" class="admin-link">⚙️ 管理</a>
+  </div>
 </header>
 
 <!-- マップ -->
@@ -199,7 +229,12 @@
   </div>
   <div class="input-row">
     <label>お迎え場所</label>
-    <input type="text" id="req-pickup" placeholder="730記念広場 など">
+    <div class="pick-wrapper">
+      <input type="text" id="req-pickup" placeholder="▼ タップでリスト / 直接入力OK" autocomplete="off"
+             style="padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%">
+      <div id="pickup-list" class="pick-list hidden"></div>
+    </div>
+    <button type="button" id="pickup-map-btn" class="map-mini-btn" title="地図で確認">🗺</button>
   </div>
   <div class="input-row">
     <label>目的地</label>
@@ -249,6 +284,45 @@ const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 
 const ISHIGAKI_CENTER = [24.3380, 124.1543];
+
+// ============================================================
+// 石垣島 駐車場・スポット（スタッフ画面と共通）
+// ============================================================
+const SPOTS = {
+  '蔵元駐車場':{ lat:24.3384,lng:124.1567 },
+  '石垣港離島ターミナル第1駐車場':{ lat:24.3367,lng:124.1580 },
+  '堤防駐車場':{ lat:24.3350,lng:124.1601 },
+  '八島第2駐車場':{ lat:24.3384,lng:124.1603 },
+  '石垣島離島ターミナル第2臨時駐車場':{ lat:24.3361,lng:124.1571 },
+  '石垣港離島ターミナル第2駐車場':{ lat:24.3370,lng:124.1575 },
+  '大川有料駐車場':{ lat:24.3395,lng:124.1538 },
+  'まるくに駐車場':{ lat:24.3399,lng:124.1539 },
+  'Dパーキング石垣市大川第一':{ lat:24.3393,lng:124.1540 },
+  'OGLパーキング':{ lat:24.3397,lng:124.1537 },
+  'タケトミタウンパーキング':{ lat:24.3410,lng:124.1551 },
+  'アイランドパーキング20石垣島':{ lat:24.3379,lng:124.1562 },
+  'akkipa登野城駐車場':{ lat:24.3402,lng:124.1572 },
+  'ひとし駐車場':{ lat:24.3393,lng:124.1565 },
+  'シーサーパーキング':{ lat:24.3378,lng:124.1567 },
+  '石垣島宿泊施設わったー家8・9番駐車場':{ lat:24.3390,lng:124.1560 },
+  'サザンゲートブリッジ':{ lat:24.3280,lng:124.1515 },
+  'ユーグレナ石垣港離島ターミナル':{ lat:24.3368,lng:124.1583 },
+  '石垣市中央運動公園駐車場':{ lat:24.3476,lng:124.1717 },
+  '南ぬ島石垣空港':{ lat:24.3964,lng:124.2433 },
+  'バンナ公園':{ lat:24.3518,lng:124.1595 },
+  '石垣市役所':{ lat:24.3409,lng:124.1551 },
+  'マックスバリュ石垣店':{ lat:24.3324,lng:124.1527 },
+  'イオンタウン石垣':{ lat:24.3254,lng:124.1582 },
+  'ドン・キホーテ石垣店':{ lat:24.3412,lng:124.1553 },
+  '川平湾':{ lat:24.4521,lng:124.1444 },
+  '米原ビーチ':{ lat:24.4395,lng:124.1760 },
+  'フサキビーチ':{ lat:24.3258,lng:124.1106 },
+  '底地ビーチ':{ lat:24.3758,lng:124.1095 },
+  '白保海岸':{ lat:24.3699,lng:124.2249 },
+  'ANAインターコンチネンタル石垣リゾート':{ lat:24.3828,lng:124.1421 },
+  'フサキビーチリゾート':{ lat:24.3249,lng:124.1085 },
+  'グランヴィリオリゾート石垣島':{ lat:24.3820,lng:124.1432 },
+};
 
 // 本日ISO
 const todayISO = (() => {
@@ -637,7 +711,57 @@ async function poll() {
   if (activeRideTab) await fetchTodayRides(activeRideTab);
 }
 
+// ============================================================
+// お迎え場所カスタムドロップダウン
+// ============================================================
+function initPickupDropdown() {
+  const input = document.getElementById('req-pickup');
+  const list  = document.getElementById('pickup-list');
+  const allSpots = Object.keys(SPOTS);
+  let touchStartY = 0, touchMoved = false;
+
+  function renderList(filter) {
+    const q = (filter||'').trim();
+    const items = q ? allSpots.filter(s => s.includes(q)) : allSpots;
+    if (items.length === 0) { list.classList.add('hidden'); return; }
+    list.innerHTML = items.map(s => `<div class="pick-list-item">${s}</div>`).join('');
+    list.classList.remove('hidden');
+  }
+  list.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; touchMoved = false; }, { passive:true });
+  list.addEventListener('touchmove',  e => { if (Math.abs(e.touches[0].clientY - touchStartY) > 8) touchMoved = true; }, { passive:true });
+  list.addEventListener('touchend', e => {
+    if (touchMoved) return;
+    const item = e.target.closest('.pick-list-item');
+    if (!item) return;
+    e.preventDefault();
+    input.value = item.textContent;
+    list.classList.add('hidden'); input.blur();
+  });
+  list.addEventListener('mousedown', e => {
+    const item = e.target.closest('.pick-list-item');
+    if (!item) return;
+    e.preventDefault();
+    input.value = item.textContent;
+    list.classList.add('hidden');
+  });
+  input.addEventListener('focus', () => renderList(input.value));
+  input.addEventListener('click', () => renderList(input.value));
+  input.addEventListener('input', () => renderList(input.value));
+  input.addEventListener('blur',  () => setTimeout(() => list.classList.add('hidden'), 300));
+
+  // マップボタン
+  document.getElementById('pickup-map-btn').addEventListener('click', () => {
+    const name = input.value.trim();
+    const spot = SPOTS[name];
+    const url = spot
+      ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
+      : `https://maps.google.com/search/?q=${encodeURIComponent('石垣島 ' + (name||'駐車場'))}`;
+    window.open(url, '_blank');
+  });
+}
+
 // 初回
+initPickupDropdown();
 poll();
 // 5秒ごと
 setInterval(poll, 5000);

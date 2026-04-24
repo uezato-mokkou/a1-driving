@@ -457,7 +457,7 @@
     </div>
     <div class="btn-row" style="margin-top:6px">
       <button class="btn btn-gray" id="btn-staff-change" style="flex:1;font-size:12px;padding:10px">👤 スタッフ変更</button>
-      <button class="btn btn-gray" id="btn-share-shift" style="flex:1;font-size:12px;padding:10px">📲 シフト共有</button>
+      <button class="btn btn-gray" id="btn-share-shift" style="flex:1;font-size:12px;padding:10px">📲 乗務記録共有</button>
     </div>
   </div>
 </div>
@@ -912,6 +912,7 @@ async function startShift() {
   showScreen('main');
   renderMain();
   startRideSync();
+  pushVehicle('waiting');
 }
 
 // ============================================================
@@ -1532,11 +1533,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!state.shiftId) { alert('シフトがまだ開始されていません'); return; }
     const url = `${location.origin}${location.pathname}?join=${CARS[state.car].id}`;
     if (navigator.share) {
-      navigator.share({ title: 'A1シフト参加', url }).catch(()=>{});
+      navigator.share({ title: 'A1乗務記録共有', url }).catch(()=>{});
     } else {
       navigator.clipboard.writeText(url)
-        .then(() => alert('シフト共有URLをコピーしました！\n' + url))
-        .catch(() => prompt('このURLをコピーしてください：', url));
+        .then(() => alert('乗務記録共有URLをコピーしました！\n\nLINEなどで送ってください：\n' + url))
+        .catch(() => prompt('このURLをコピーして送ってください：', url));
     }
   });
 
@@ -1634,24 +1635,28 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-req-accept').addEventListener('click', () => respondToRequest('accepted'));
   document.getElementById('btn-req-decline').addEventListener('click', () => respondToRequest('declined'));
 
-  // ── LocalStorage 復元
-  const restored = loadState();
-  if (restored && state.screen && state.screen !== 'setup') {
-    showScreen(state.screen);
-    if (state.screen === 'main') renderMain();
-    if (state.shiftId) startRideSync();
-  } else {
-    showScreen('setup');
-  }
-
-  // ── URL パラメータで自動参加
+  // ── URL パラメータで自動参加（LocalStorage より優先）
   const urlParams = new URLSearchParams(location.search);
   const joinParam = urlParams.get('join');
   if (joinParam) {
-    const carLetter = joinParam === 'car_a' ? 'A' : joinParam === 'car_b' ? 'B' : joinParam === 'car_c' ? 'C' : null;
+    clearState(); // 既存のローカル状態を消してからシフト参加
+    const carMap = { car_a: 'A', car_b: 'B', car_c: 'C' };
+    const carLetter = carMap[joinParam] || null;
     if (carLetter) {
       joinSelectedCar = carLetter;
-      joinExistingShift();
+      joinExistingShift(); // async だが意図的に非同期実行
+    } else {
+      showScreen('setup');
+    }
+  } else {
+    // ── LocalStorage 復元
+    const restored = loadState();
+    if (restored && state.screen && state.screen !== 'setup') {
+      showScreen(state.screen);
+      if (state.screen === 'main') renderMain();
+      if (state.shiftId) startRideSync();
+    } else {
+      showScreen('setup');
     }
   }
 
