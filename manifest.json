@@ -1,0 +1,24 @@
+{
+  "name": "A1運転代行 スタッフ",
+  "short_name": "A1代行",
+  "description": "A1運転代行 運転手用アプリ",
+  "start_url": "/a1-driving/staff_gps_app.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
