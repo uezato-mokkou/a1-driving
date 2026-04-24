@@ -570,6 +570,15 @@
       </div>
     </div>
 
+    <!-- 料金タイプ（到着後変更可） -->
+    <div class="section" id="arrived-fare-type-section">
+      <div class="section-title">💰 料金タイプ（変更可）</div>
+      <div class="radio-group" id="fare-type-arrived">
+        <div class="radio-btn active" data-faretype3="general" style="flex:1">一般<small>観光客向け</small></div>
+        <div class="radio-btn" data-faretype3="local" style="flex:1">地元割<small>地元割引</small></div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-title">💰 料金（調整可）</div>
       <div class="fare-big" id="fare-display">¥0</div>
@@ -1087,9 +1096,14 @@ function renderRideTable() {
     const destLabel = r.arrivalPlace || r.destination || '—';
     const destCell  = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
     // 経路リンク
-    const routeUrl = (r.depLat && r.arrivalLat)
-      ? `https://maps.google.com/maps/dir/${r.depLat},${r.depLng}/${r.arrivalLat},${r.arrivalLng}`
-      : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrivalPlace||r.destination||'')}`;
+    const _depSpot = SPOTS[r.departure] || (customLocations && customLocations[r.departure]);
+    const _depOrigin = r.depLat
+      ? `${r.depLat},${r.depLng}`
+      : (_depSpot ? `${_depSpot.lat},${_depSpot.lng}` : encodeURIComponent(r.departure || '石垣島'));
+    const _arrDest = r.arrivalLat
+      ? `${r.arrivalLat},${r.arrivalLng}`
+      : encodeURIComponent(r.arrivalPlace || r.destination || '');
+    const routeUrl = `https://www.google.com/maps/dir/?api=1&origin=${_depOrigin}&destination=${_arrDest}&travelmode=driving`;
     const hasRoute = r.arrivalLat || r.destination || r.arrivalPlace;
     return `<tr>
       <td>${i+1}</td>
@@ -1235,6 +1249,7 @@ async function doArrive() {
 
   document.getElementById('section-driving').classList.add('hidden');
   document.getElementById('section-arrived').classList.remove('hidden');
+  syncFareTypeBtns('fare-type-arrived', 'faretype3', rideFareType);
   pushVehicle('waiting');
 }
 
@@ -1276,22 +1291,39 @@ function doCompleteRide() {
 // GPS コールバック
 function onGpsPos(pos) {
   const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+  // 現在位置は常に更新（管理画面への送信用）
   rideCurrentLat = lat; rideCurrentLng = lng;
-  if (isFirstGpsPos && acc < 200) {
-    depLat = lat; depLng = lng; isFirstGpsPos = false;
-  }
   document.getElementById('gps-text').textContent = `GPS: 計測中（精度 ±${Math.round(acc)}m）`;
+
+  // 精度が低すぎるポイントは距離計算に使わない（位置更新のみ）
+  if (acc > 80) {
+    pushVehicleLocation(lat, lng);
+    return;
+  }
+
+  // 最初の高精度GPSで出発地を確定
+  if (isFirstGpsPos) {
+    depLat = lat; depLng = lng; isFirstGpsPos = false;
+    rideLastPos = { lat, lng };
+    pushVehicleLocation(lat, lng);
+    return;
+  }
+
   if (rideLastPos) {
     const d = haversine(rideLastPos.lat, rideLastPos.lng, lat, lng);
-    if (acc < 100 && d < 0.5) {
+    // 5m以上300m以下の移動のみ距離に加算（GPS漂流・瞬間的なエラーを除外）
+    if (d >= 0.005 && d < 0.3) {
       rideDist += d;
       rideFare  = calcFare(rideDist, rideFareType);
       document.getElementById('ride-dist-val').innerHTML =
         `${rideDist.toFixed(2)}<span class="mu">km</span>`;
       document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
     }
+    // 現実的な範囲（500m以内）のみ次の基準点として採用
+    if (d < 0.5) {
+      rideLastPos = { lat, lng };
+    }
   }
-  rideLastPos = { lat, lng };
   pushVehicleLocation(lat, lng);
 }
 function onGpsErr(err) {
@@ -1352,9 +1384,14 @@ function initEndShift() {
       : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.arrivalPlace||r.destination||''))}`;
     const destLabel2 = r.arrivalPlace || r.destination || '—';
     const destCell2 = destLabel2 !== '—' ? `<a href="${destUrl2}" target="_blank">${destLabel2}</a>` : '—';
-    const routeUrl2 = (r.depLat && r.arrivalLat)
-      ? `https://maps.google.com/maps/dir/${r.depLat},${r.depLng}/${r.arrivalLat},${r.arrivalLng}`
-      : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrivalPlace||r.destination||'')}`;
+    const _depSpot2 = SPOTS[r.departure] || (customLocations && customLocations[r.departure]);
+    const _depOrigin2 = r.depLat
+      ? `${r.depLat},${r.depLng}`
+      : (_depSpot2 ? `${_depSpot2.lat},${_depSpot2.lng}` : encodeURIComponent(r.departure || '石垣島'));
+    const _arrDest2 = r.arrivalLat
+      ? `${r.arrivalLat},${r.arrivalLng}`
+      : encodeURIComponent(r.arrivalPlace || r.destination || '');
+    const routeUrl2 = `https://www.google.com/maps/dir/?api=1&origin=${_depOrigin2}&destination=${_arrDest2}&travelmode=driving`;
     const hasRoute2 = r.arrivalLat || r.destination || r.arrivalPlace;
     return `<tr>
       <td>${i+1}</td>
@@ -1478,22 +1515,46 @@ async function respondToRequest(status) {
 // ============================================================
 // カスタム出発地ドロップダウン（スマホ対応・スクロール検出）
 // ============================================================
+let customLocations = {}; // Supabaseから取得したカスタム場所
+
+async function loadCustomLocations() {
+  const data = await sbGet('/rest/v1/locations?order=name.asc') || [];
+  customLocations = {};
+  data.forEach(l => {
+    if (l.name) customLocations[l.name] = { lat: l.lat || 0, lng: l.lng || 0 };
+  });
+}
+
 function initDepartureDropdown() {
   const input = document.getElementById('ride-departure');
   const list  = document.getElementById('dep-list');
-  const allSpots = Object.keys(SPOTS);
   let listTouchStartY = 0;
   let listTouchMoved  = false;
+  let justSelected    = false; // タップ選択直後のclick誤作動防止
+
+  function getAllSpots() {
+    // SPOTSとカスタムロケーションをマージ（カスタムが優先）
+    const all = new Set([...Object.keys(SPOTS), ...Object.keys(customLocations)]);
+    return [...all].sort((a, b) => a.localeCompare(b, 'ja'));
+  }
 
   function renderList(filter) {
     const q = (filter || '').trim();
-    const items = q ? allSpots.filter(s => s.includes(q)) : allSpots;
+    const allItems = getAllSpots();
+    const items = q ? allItems.filter(s => s.includes(q)) : allItems;
     if (items.length === 0) { list.classList.add('hidden'); return; }
     list.innerHTML = items.map(s => `<div class="dep-list-item">${s}</div>`).join('');
     list.classList.remove('hidden');
   }
 
-  // スクロール vs タップ 判定
+  function selectItem(text) {
+    input.value = text;
+    list.classList.add('hidden');
+    justSelected = true;
+    setTimeout(() => { justSelected = false; }, 600);
+  }
+
+  // スクロール vs タップ 判定（リストコンテナに設定）
   list.addEventListener('touchstart', (e) => {
     listTouchStartY = e.touches[0].clientY;
     listTouchMoved  = false;
@@ -1502,12 +1563,12 @@ function initDepartureDropdown() {
     if (Math.abs(e.touches[0].clientY - listTouchStartY) > 8) listTouchMoved = true;
   }, { passive: true });
   list.addEventListener('touchend', (e) => {
-    if (listTouchMoved) return; // スクロール中は無視
+    if (listTouchMoved) return;
     const item = e.target.closest('.dep-list-item');
     if (!item) return;
     e.preventDefault();
-    input.value = item.textContent;
-    list.classList.add('hidden');
+    e.stopPropagation();
+    selectItem(item.textContent);
     input.blur();
   });
   // PC（マウス）
@@ -1515,13 +1576,12 @@ function initDepartureDropdown() {
     const item = e.target.closest('.dep-list-item');
     if (!item) return;
     e.preventDefault();
-    input.value = item.textContent;
-    list.classList.add('hidden');
+    selectItem(item.textContent);
   });
 
-  input.addEventListener('focus', () => renderList(input.value));
-  input.addEventListener('click', () => renderList(input.value));
-  input.addEventListener('input', () => renderList(input.value));
+  input.addEventListener('focus', () => { if (!justSelected) renderList(input.value); });
+  input.addEventListener('click', () => { if (!justSelected) renderList(input.value); });
+  input.addEventListener('input', () => { if (!justSelected) renderList(input.value); });
   input.addEventListener('blur',  () => setTimeout(() => list.classList.add('hidden'), 300));
 }
 
@@ -1530,6 +1590,7 @@ function initDepartureDropdown() {
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   initSetup();
+  loadCustomLocations();
   initDepartureDropdown();
 
   // ── メイン画面
@@ -1602,6 +1663,17 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
     });
   });
+  // 料金タイプ（到着後）
+  document.querySelectorAll('#fare-type-arrived .radio-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      syncFareTypeBtns('fare-type-arrived', 'faretype3', this.dataset.faretype3);
+      rideFareType = this.dataset.faretype3;
+      state.fareType = rideFareType;
+      rideFare = calcFare(rideDist, rideFareType);
+      document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
+      document.getElementById('fare-edit').value = rideFare;
+    });
+  });
   // 支払方法
   document.querySelectorAll('#payment-group .radio-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -1648,12 +1720,23 @@ document.addEventListener('DOMContentLoaded', function() {
   const urlParams = new URLSearchParams(location.search);
   const joinParam = urlParams.get('join');
   if (joinParam) {
-    clearState(); // 既存のローカル状態を消してからシフト参加
     const carMap = { car_a: 'A', car_b: 'B', car_c: 'C' };
     const carLetter = carMap[joinParam] || null;
     if (carLetter) {
-      joinSelectedCar = carLetter;
-      joinExistingShift(); // async だが意図的に非同期実行
+      // まずLocalStorageを確認（ページ更新時でも乗務記録を保持）
+      const restored = loadState();
+      if (restored && state.car === carLetter && state.shiftDate === todayISO() && state.screen && state.screen !== 'setup') {
+        // 同じ車・今日のシフトが保存されている → LocalStorageから復元
+        const scr = (state.screen === 'ride') ? 'main' : state.screen;
+        showScreen(scr);
+        if (scr === 'main') renderMain();
+        if (state.shiftId) startRideSync();
+      } else {
+        // 有効な保存データなし → Supabaseから取得
+        clearState();
+        joinSelectedCar = carLetter;
+        joinExistingShift();
+      }
     } else {
       showScreen('setup');
     }
