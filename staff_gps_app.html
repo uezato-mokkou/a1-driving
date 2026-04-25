@@ -953,6 +953,7 @@ async function startShift() {
   renderMain();
   startRideSync();
   pushVehicle('waiting');
+  startContinuousGps(); // 待機中もGPS位置を送信
 }
 
 // ============================================================
@@ -1007,6 +1008,7 @@ async function joinExistingShift() {
   showScreen('main');
   renderMain();
   startRideSync();
+  startContinuousGps(); // 待機中もGPS位置を送信
 }
 
 // ============================================================
@@ -1232,11 +1234,12 @@ function doDepart() {
   rideFare = calcFare(0, rideFareType);
   document.getElementById('live-fare').textContent = `¥${rideFare.toLocaleString()}`;
 
-  if (navigator.geolocation) {
+  // 常時GPS監視中でなければ開始（二重起動を防ぐ）
+  if (navigator.geolocation && gpsWatchId === null) {
     gpsWatchId = navigator.geolocation.watchPosition(onGpsPos, onGpsErr, {
       enableHighAccuracy: true, maximumAge: 3000, timeout: 15000
     });
-  } else {
+  } else if (!navigator.geolocation) {
     document.getElementById('gps-text').textContent = 'GPS非対応ブラウザ';
     document.getElementById('gps-dot').classList.remove('on');
   }
@@ -1254,9 +1257,8 @@ async function doArrive() {
   const arrStr   = nowTime();
   const durMin   = rideStartTime ? Math.floor((arrTime - rideStartTime) / 60000) : 0;
 
-  if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
-  if (rideTimer)           { clearInterval(rideTimer); rideTimer = null; }
-  document.getElementById('gps-dot').classList.remove('on');
+  // GPS監視は停止しない（待機中も位置送信を継続）
+  if (rideTimer) { clearInterval(rideTimer); rideTimer = null; }
   document.getElementById('gps-text').textContent = `計測完了（${rideDist.toFixed(2)}km）`;
 
   rideFare = calcFare(rideDist, rideFareType);
@@ -1483,6 +1485,7 @@ async function confirmEndShift() {
     });
   }
   await pushVehicle('waiting');
+  stopContinuousGps(); // 退勤時にGPS監視を停止
   if (rideSyncInterval) { clearInterval(rideSyncInterval); rideSyncInterval = null; }
   clearState();
   alert('お疲れさまでした！退勤処理が完了しました。');
@@ -1533,11 +1536,29 @@ async function pushVehicle(status) {
   });
 }
 async function pushVehicleLocation(lat,lng) {
+  // status はハードコードせず pushVehicle() で設定した値を維持
   await sbUpsert('/rest/v1/vehicles', {
     id: CARS[state.car].id, vehicle_name: CARS[state.car].name,
-    lat, lng, status: 'driving', distance: rideDist||0, fare: rideFare||0,
+    lat, lng,
     updated_at: new Date().toISOString()
   });
+}
+
+// 出勤中はGPS監視を常時起動（待機中も位置を送信）
+function startContinuousGps() {
+  if (gpsWatchId !== null) return; // 既に起動中
+  if (!navigator.geolocation) return;
+  gpsWatchId = navigator.geolocation.watchPosition(onGpsPos, onGpsErr, {
+    enableHighAccuracy: true, maximumAge: 3000, timeout: 15000
+  });
+}
+
+function stopContinuousGps() {
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+  document.getElementById('gps-dot').classList.remove('on');
 }
 
 // ============================================================
@@ -1755,7 +1776,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-arrive').addEventListener('click', doArrive);
   document.getElementById('btn-complete').addEventListener('click', doCompleteRide);
   document.getElementById('btn-ride-back').addEventListener('click', () => {
-    if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+    // GPS監視は停止しない（待機中も位置送信継続）
     if (rideTimer) { clearInterval(rideTimer); rideTimer = null; }
     showScreen('main'); renderMain();
   });
@@ -1845,7 +1866,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const scr = (state.screen === 'ride') ? 'main' : state.screen;
         showScreen(scr);
         if (scr === 'main') renderMain();
-        if (state.shiftId) startRideSync();
+        if (state.shiftId) { startRideSync(); startContinuousGps(); }
       } else {
         // 有効な保存データなし → Supabaseから取得
         clearState();
@@ -1861,7 +1882,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (restored && state.screen && state.screen !== 'setup') {
       showScreen(state.screen);
       if (state.screen === 'main') renderMain();
-      if (state.shiftId) startRideSync();
+      if (state.shiftId) { startRideSync(); startContinuousGps(); }
     } else {
       showScreen('setup');
     }
