@@ -411,7 +411,7 @@ function makeMarkerIcon(carId, status) {
 // 出勤中の車（shifts テーブルから取得）
 // ============================================================
 let activeShifts = {}; // { car_id: shiftData }  ← status=active のみ
-let rideShifts   = {}; // { car_id: shiftData }  ← 乗務記録用（選択日付のシフト）
+let ridesByCar   = {}; // { car_id: rides[] }    ← 乗務記録用（選択日付のライド）
 let activeRideTab = null;
 
 async function fetchActiveShifts() {
@@ -428,25 +428,29 @@ async function fetchActiveShifts() {
 }
 
 // ============================================================
-// 乗務記録：日付選択 → シフト取得 → 乗務タブ表示
+// 乗務記録：日付選択 → rides テーブルを直接検索 → タブ表示
 // ============================================================
 function initRideDateInput() {
   const input = document.getElementById('ride-date-input');
   input.value = todayISO;
-  // 日付変更時はタブをリセット（preserveTab=false）
+  // 日付変更時はタブをリセット
   input.addEventListener('change', () => fetchRidesForDate(input.value, false));
   fetchRidesForDate(todayISO, false);
 }
 
-// preserveTab=true のとき現在選択中のタブを維持して更新
+// rides テーブルを date で直接検索（シフト経由しない）
+// preserveTab=true のとき現在選択中のタブを維持
 async function fetchRidesForDate(date, preserveTab = false) {
   if (!date) return;
-  const data = await sbGet(`/rest/v1/shifts?date=eq.${date}&order=created_at.asc`);
+  // rides テーブルを日付で直接検索（シフト複数重複の影響なし）
+  const data = await sbGet(`/rest/v1/rides?date=eq.${date}&order=seq_num.asc`);
   if (!data) return;
 
-  rideShifts = {};
-  data.forEach(s => {
-    if (!rideShifts[s.car_id]) rideShifts[s.car_id] = s;
+  // car_id ごとにグループ化
+  ridesByCar = {};
+  data.forEach(r => {
+    if (!ridesByCar[r.car_id]) ridesByCar[r.car_id] = [];
+    ridesByCar[r.car_id].push(r);
   });
 
   updateRidesTabs(preserveTab);
@@ -660,7 +664,8 @@ function renderReqList() {
 function updateRidesTabs(preserveTab = false) {
   const tabsEl = document.getElementById('rides-tabs');
   tabsEl.innerHTML = '';
-  const ids = Object.keys(rideShifts);
+  const ids = Object.keys(ridesByCar);
+
   if (ids.length === 0) {
     renderRidesTable([]);
     activeRideTab = null;
@@ -668,41 +673,28 @@ function updateRidesTabs(preserveTab = false) {
   }
 
   // 現在のタブが引き続き存在すれば維持、なければ最初のタブへ
-  const targetTab = (preserveTab && activeRideTab && rideShifts[activeRideTab])
+  const targetTab = (preserveTab && activeRideTab && ridesByCar[activeRideTab])
     ? activeRideTab
     : ids[0];
 
   ids.forEach(carId => {
-    const def   = CAR_DEFS[carId] || {};
-    const shift = rideShifts[carId];
-    const ended = shift.status === 'ended';
-    const tab   = document.createElement('div');
+    const def = CAR_DEFS[carId] || {};
+    const cnt = (ridesByCar[carId] || []).length;
+    const tab = document.createElement('div');
     tab.className = 'rides-tab' + (carId === targetTab ? ' active' : '');
     tab.dataset.car = carId;
-    tab.textContent = `🚗 ${def.name}${ended ? '（終業）' : ''}`;
+    tab.textContent = `🚗 ${def.name}（${cnt}件）`;
     tab.addEventListener('click', function() {
       document.querySelectorAll('.rides-tab').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       activeRideTab = this.dataset.car;
-      fetchRidesByShift(activeRideTab);
+      renderRidesTable(ridesByCar[activeRideTab] || []);
     });
     tabsEl.appendChild(tab);
   });
 
   activeRideTab = targetTab;
-  fetchRidesByShift(activeRideTab);
-}
-
-async function fetchRidesByShift(carId) {
-  if (!carId) return;
-  const shift = rideShifts[carId];
-  if (!shift || !shift.id) {
-    renderRidesTable([]);
-    return;
-  }
-  const data = await sbGet(`/rest/v1/rides?shift_id=eq.${shift.id}&order=seq_num.asc`);
-  if (!data) return;
-  renderRidesTable(data);
+  renderRidesTable(ridesByCar[activeRideTab] || []);
 }
 
 
