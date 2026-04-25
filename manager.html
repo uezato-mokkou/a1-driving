@@ -433,13 +433,14 @@ async function fetchActiveShifts() {
 function initRideDateInput() {
   const input = document.getElementById('ride-date-input');
   input.value = todayISO;
-  input.addEventListener('change', () => fetchRidesForDate(input.value));
-  fetchRidesForDate(todayISO);
+  // 日付変更時はタブをリセット（preserveTab=false）
+  input.addEventListener('change', () => fetchRidesForDate(input.value, false));
+  fetchRidesForDate(todayISO, false);
 }
 
-async function fetchRidesForDate(date) {
+// preserveTab=true のとき現在選択中のタブを維持して更新
+async function fetchRidesForDate(date, preserveTab = false) {
   if (!date) return;
-  // 指定日のシフトを全件取得（status不問）
   const data = await sbGet(`/rest/v1/shifts?date=eq.${date}&order=created_at.asc`);
   if (!data) return;
 
@@ -448,7 +449,7 @@ async function fetchRidesForDate(date) {
     if (!rideShifts[s.car_id]) rideShifts[s.car_id] = s;
   });
 
-  updateRidesTabs();
+  updateRidesTabs(preserveTab);
 }
 
 function renderVehiclePanels() {
@@ -656,22 +657,27 @@ function renderReqList() {
 // ============================================================
 // 乗務記録
 // ============================================================
-function updateRidesTabs() {
+function updateRidesTabs(preserveTab = false) {
   const tabsEl = document.getElementById('rides-tabs');
   tabsEl.innerHTML = '';
   const ids = Object.keys(rideShifts);
   if (ids.length === 0) {
-    // 記録なし表示
     renderRidesTable([]);
     activeRideTab = null;
     return;
   }
-  ids.forEach((carId, i) => {
+
+  // 現在のタブが引き続き存在すれば維持、なければ最初のタブへ
+  const targetTab = (preserveTab && activeRideTab && rideShifts[activeRideTab])
+    ? activeRideTab
+    : ids[0];
+
+  ids.forEach(carId => {
     const def   = CAR_DEFS[carId] || {};
     const shift = rideShifts[carId];
     const ended = shift.status === 'ended';
     const tab   = document.createElement('div');
-    tab.className = 'rides-tab' + (i === 0 ? ' active' : '');
+    tab.className = 'rides-tab' + (carId === targetTab ? ' active' : '');
     tab.dataset.car = carId;
     tab.textContent = `🚗 ${def.name}${ended ? '（終業）' : ''}`;
     tab.addEventListener('click', function() {
@@ -682,8 +688,8 @@ function updateRidesTabs() {
     });
     tabsEl.appendChild(tab);
   });
-  // 最初のタブを自動選択
-  activeRideTab = ids[0];
+
+  activeRideTab = targetTab;
   fetchRidesByShift(activeRideTab);
 }
 
@@ -699,11 +705,6 @@ async function fetchRidesByShift(carId) {
   renderRidesTable(data);
 }
 
-// ポーリング用：現在選択中タブのデータを更新
-async function refreshActiveRideTab() {
-  if (!activeRideTab) return;
-  await fetchRidesByShift(activeRideTab);
-}
 
 function renderRidesTable(rides) {
   const tbody   = document.getElementById('rides-tbody');
@@ -765,9 +766,10 @@ async function poll() {
   await fetchActiveShifts();
   await fetchVehicles();
   await fetchRequests();
-  // 選択中の日付が今日の場合のみ乗務タブを自動リフレッシュ
+  // 選択中の日付が今日の場合：シフト情報ごと再取得（タブ選択は維持）
+  // 過去日付の場合：ポーリングしない（手動更新のみ）
   const rideDate = document.getElementById('ride-date-input').value;
-  if (rideDate === todayISO) await refreshActiveRideTab();
+  if (rideDate === todayISO) await fetchRidesForDate(todayISO, true);
 }
 
 // ============================================================
