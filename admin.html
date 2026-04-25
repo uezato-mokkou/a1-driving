@@ -231,17 +231,34 @@
      ============================================================ -->
 <div id="tab-location" class="tab-panel">
 
+  <!-- 標準スポット -->
+  <div class="section">
+    <div class="section-title">🏠 標準スポット（内蔵）</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+      下の「Supabaseへ登録」を押すと、スタッフアプリのリストに反映されます。登録後は下の一覧から編集可能です。
+    </div>
+    <button class="btn btn-yellow btn-full" id="btn-seed-spots" style="margin:0 0 4px">📥 標準スポットをSupabaseへ一括登録</button>
+    <div id="seed-msg" style="font-size:12px;color:var(--green);min-height:18px;text-align:center;margin-top:4px"></div>
+  </div>
+
   <!-- マップで選択 -->
   <div class="section">
-    <div class="section-title">🗺 マップをタップして場所を登録</div>
+    <div class="section-title">🗺 マップで位置を登録（長押しでピン）</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
-      マップをタップ／クリックすると座標が自動入力されます
+      マップを長押し（スマホ）またはクリック（PC）で座標を自動入力
     </div>
     <div id="loc-map" style="height:260px;border-radius:10px;overflow:hidden;margin-bottom:10px"></div>
     <div id="loc-map-selected" style="font-size:12px;color:var(--accent);margin-bottom:8px;min-height:18px"></div>
     <div class="input-row">
       <label>場所名</label>
       <input type="text" id="nl-name" placeholder="例: ○○ホテル駐車場">
+    </div>
+    <div class="input-row">
+      <label>分類</label>
+      <select id="nl-category">
+        <option value="departure">出発地点</option>
+        <option value="destination">目的地・顧客</option>
+      </select>
     </div>
     <div class="input-row">
       <label>緯度</label>
@@ -254,15 +271,23 @@
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn btn-blue" id="btn-add-loc" style="flex:1">➕ 登録</button>
       <button class="btn btn-gray" id="btn-gps-loc" style="flex:1">📍 現在地</button>
+      <button class="btn btn-gray" id="btn-cancel-loc" style="flex:1">✕ キャンセル</button>
     </div>
     <input type="hidden" id="nl-edit-id">
   </div>
 
-  <!-- 登録済み一覧 -->
+  <!-- 登録済み出発地点一覧 -->
   <div class="section">
-    <div class="section-title">📍 登録済み出発地点一覧</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">※ ここに登録するとスタッフアプリの出発地リストに追加されます</div>
-    <div id="loc-list">
+    <div class="section-title">📍 登録済み 出発地点</div>
+    <div id="loc-list-departure">
+      <div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">読み込み中...</div>
+    </div>
+  </div>
+
+  <!-- 登録済み目的地・顧客一覧 -->
+  <div class="section">
+    <div class="section-title">👥 登録済み 目的地・顧客</div>
+    <div id="loc-list-destination">
       <div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">読み込み中...</div>
     </div>
   </div>
@@ -342,6 +367,31 @@ CREATE POLICY "public_all" ON attendance FOR ALL USING (true) WITH CHECK (true);
 const SUPABASE_URL      = 'https://mfkqpsmfteiolgeqgnfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_NV_AQykUo40ReFLWAuYoHQ_9m-Sn_ql';
 
+// 石垣島 標準スポット（出発地）
+const BUILTIN_SPOTS = {
+  '蔵元駐車場':{ lat:24.3384,lng:124.1567 },
+  '石垣港離島ターミナル第1駐車場':{ lat:24.3367,lng:124.1580 },
+  '堤防駐車場':{ lat:24.3350,lng:124.1601 },
+  '八島第2駐車場':{ lat:24.3384,lng:124.1603 },
+  '石垣島離島ターミナル第2臨時駐車場':{ lat:24.3361,lng:124.1571 },
+  '石垣港離島ターミナル第2駐車場':{ lat:24.3370,lng:124.1575 },
+  '大川有料駐車場':{ lat:24.3395,lng:124.1538 },
+  'まるくに駐車場':{ lat:24.3399,lng:124.1539 },
+  'Dパーキング石垣市大川第一':{ lat:24.3393,lng:124.1540 },
+  'OGLパーキング':{ lat:24.3397,lng:124.1537 },
+  '石垣市公設市場':{ lat:24.3402,lng:124.1547 },
+  'ユーグレナモール':{ lat:24.3397,lng:124.1552 },
+  'ANAインターコンチネンタル石垣リゾート':{ lat:24.3828,lng:124.1421 },
+  'フサキビーチリゾート':{ lat:24.3249,lng:124.1085 },
+  'グランヴィリオリゾート石垣島':{ lat:24.3820,lng:124.1432 },
+  'アートホテル石垣島':{ lat:24.3387,lng:124.1568 },
+  'ホテルミヤヒラ':{ lat:24.3392,lng:124.1548 },
+  'ホテルグランビュー石垣':{ lat:24.3405,lng:124.1557 },
+  '白保海岸':{ lat:24.3699,lng:124.2249 },
+  '石垣空港':{ lat:24.3967,lng:124.2456 },
+  'みのり食品':{ lat:24.3349,lng:124.1518 },
+};
+
 // デフォルトスタッフ
 const DEFAULT_STAFF = [
   { name: '社長',  role: '2種', pay_type: 'commission', hourly_rate: 900 },
@@ -406,18 +456,6 @@ async function sbDelete(path) {
 async function sbUpsert(path, body) {
   return sbPost(path, body, 'resolution=merge-duplicates,return=representation');
 }
-
-// ============================================================
-// タブ切り替え
-// ============================================================
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', function() {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    this.classList.add('active');
-    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-  });
-});
 
 // ============================================================
 // ★ スタッフ管理
@@ -729,7 +767,7 @@ async function markPaid(id) {
 }
 
 // ============================================================
-// ★ 場所管理
+// ★ 場所管理（出発地点・目的地）
 // ============================================================
 let locList = [];
 let locEditId = null;
@@ -741,12 +779,18 @@ async function loadLocations() {
 }
 
 function renderLocList() {
-  const el = document.getElementById('loc-list');
-  if (locList.length === 0) {
-    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">登録なし（初期スポットはスタッフアプリ内に内蔵済み）</div>';
+  renderLocListByCategory('departure',    document.getElementById('loc-list-departure'));
+  renderLocListByCategory('destination',  document.getElementById('loc-list-destination'));
+}
+
+function renderLocListByCategory(category, el) {
+  if (!el) return;
+  const items = locList.filter(l => (l.category || 'departure') === category);
+  if (items.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:12px;font-size:13px">登録なし</div>';
     return;
   }
-  el.innerHTML = locList.map(l => `<div class="loc-row">
+  el.innerHTML = items.map(l => `<div class="loc-row">
     <div>
       <div class="loc-name">${l.name}</div>
       <div class="loc-coords">lat: ${l.lat||'—'}, lng: ${l.lng||'—'}</div>
@@ -765,10 +809,18 @@ function editLoc(id) {
   document.getElementById('nl-name').value = l.name;
   document.getElementById('nl-lat').value  = l.lat || '';
   document.getElementById('nl-lng').value  = l.lng || '';
+  document.getElementById('nl-category').value = l.category || 'departure';
   document.getElementById('nl-edit-id').value = id;
   document.getElementById('btn-add-loc').textContent = '💾 更新';
   document.querySelector('[data-tab="location"]').click();
   window.scrollTo(0, 0);
+  // マップにマーカーを表示
+  if (l.lat && l.lng && locMap) {
+    const ll = [parseFloat(l.lat), parseFloat(l.lng)];
+    locMap.setView(ll, 15);
+    if (locMapMarker) { locMapMarker.setLatLng(ll); } else { locMapMarker = L.marker(ll).addTo(locMap); }
+    document.getElementById('loc-map-selected').textContent = `📍 選択中: ${l.lat}, ${l.lng}`;
+  }
 }
 
 async function deleteLoc(id, name) {
@@ -778,22 +830,31 @@ async function deleteLoc(id, name) {
 }
 
 document.getElementById('btn-add-loc').addEventListener('click', async function() {
-  const name   = document.getElementById('nl-name').value.trim();
-  const lat    = parseFloat(document.getElementById('nl-lat').value) || null;
-  const lng    = parseFloat(document.getElementById('nl-lng').value) || null;
-  const editId = document.getElementById('nl-edit-id').value;
+  const name     = document.getElementById('nl-name').value.trim();
+  const lat      = parseFloat(document.getElementById('nl-lat').value) || null;
+  const lng      = parseFloat(document.getElementById('nl-lng').value) || null;
+  const category = document.getElementById('nl-category').value;
+  const editId   = document.getElementById('nl-edit-id').value;
   if (!name) { alert('場所名を入力してください'); return; }
   if (editId) {
-    await sbPatch(`/rest/v1/locations?id=eq.${editId}`, { name, lat, lng });
+    await sbPatch(`/rest/v1/locations?id=eq.${editId}`, { name, lat, lng, category });
     document.getElementById('nl-edit-id').value = '';
-    this.textContent = '➕ 追加';
+    this.textContent = '➕ 登録';
   } else {
-    await sbPost('/rest/v1/locations', { name, lat, lng }, 'return=minimal');
+    await sbPost('/rest/v1/locations', { name, lat, lng, category }, 'return=minimal');
   }
-  document.getElementById('nl-name').value = '';
-  document.getElementById('nl-lat').value  = '';
-  document.getElementById('nl-lng').value  = '';
+  ['nl-name','nl-lat','nl-lng'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('loc-map-selected').textContent = '';
+  if (locMapMarker) { locMapMarker.remove(); locMapMarker = null; }
   await loadLocations();
+});
+
+document.getElementById('btn-cancel-loc').addEventListener('click', function() {
+  ['nl-name','nl-lat','nl-lng'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('nl-edit-id').value = '';
+  document.getElementById('btn-add-loc').textContent = '➕ 登録';
+  document.getElementById('loc-map-selected').textContent = '';
+  if (locMapMarker) { locMapMarker.remove(); locMapMarker = null; }
 });
 
 document.getElementById('btn-gps-loc').addEventListener('click', function() {
@@ -803,11 +864,28 @@ document.getElementById('btn-gps-loc').addEventListener('click', function() {
   navigator.geolocation.getCurrentPosition(pos => {
     document.getElementById('nl-lat').value = pos.coords.latitude.toFixed(6);
     document.getElementById('nl-lng').value = pos.coords.longitude.toFixed(6);
-    btn.textContent = '📍 現在地を取得'; btn.disabled = false;
+    btn.textContent = '📍 現在地'; btn.disabled = false;
   }, err => {
     alert('GPS取得失敗: ' + err.message);
-    btn.textContent = '📍 現在地を取得'; btn.disabled = false;
+    btn.textContent = '📍 現在地'; btn.disabled = false;
   }, { enableHighAccuracy: true });
+});
+
+// 標準スポットをSupabaseへ一括登録
+document.getElementById('btn-seed-spots').addEventListener('click', async function() {
+  this.disabled = true; this.textContent = '登録中...';
+  let count = 0;
+  for (const [name, coords] of Object.entries(BUILTIN_SPOTS)) {
+    // 同名が既にあればスキップ（upsert的な動作）
+    const exists = locList.find(l => l.name === name);
+    if (!exists) {
+      await sbPost('/rest/v1/locations', { name, lat: coords.lat, lng: coords.lng, category: 'departure' }, 'return=minimal');
+      count++;
+    }
+  }
+  this.disabled = false; this.textContent = '📥 標準スポットをSupabaseへ一括登録';
+  document.getElementById('seed-msg').textContent = count > 0 ? `✅ ${count}件を登録しました` : '✅ 全スポット登録済みです';
+  await loadLocations();
 });
 
 // ============================================================
@@ -833,28 +911,45 @@ let locMapMarker = null;
 const ISHIGAKI_CENTER = [24.3448, 124.1572];
 
 function initLocMap() {
-  if (locMap) return; // 既に初期化済み
+  if (locMap) return;
   locMap = L.map('loc-map').setView(ISHIGAKI_CENTER, 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(locMap);
 
-  locMap.on('click', function(e) {
-    const { lat, lng } = e.latlng;
+  function setPinAt(latlng) {
+    const { lat, lng } = latlng;
     document.getElementById('nl-lat').value = lat.toFixed(6);
     document.getElementById('nl-lng').value = lng.toFixed(6);
     document.getElementById('loc-map-selected').textContent = `📍 選択中: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    if (locMapMarker) {
-      locMapMarker.setLatLng([lat, lng]);
-    } else {
-      locMapMarker = L.marker([lat, lng]).addTo(locMap);
-    }
+    if (locMapMarker) { locMapMarker.setLatLng([lat, lng]); }
+    else { locMapMarker = L.marker([lat, lng]).addTo(locMap); }
+  }
+
+  // PC: クリックでピン
+  locMap.on('click', function(e) { setPinAt(e.latlng); });
+
+  // スマホ: 長押し（500ms）でピン
+  let longPressTimer = null;
+  locMap.on('touchstart', function(e) {
+    longPressTimer = setTimeout(() => {
+      if (e.latlng) setPinAt(e.latlng);
+    }, 500);
+  });
+  locMap.on('touchend touchcancel touchmove', function() {
+    clearTimeout(longPressTimer);
   });
 }
 
 // タブ切り替え時にマップ初期化
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    const panelId = 'tab-' + this.dataset.tab;
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
     if (this.dataset.tab === 'location') {
       setTimeout(() => {
         initLocMap();

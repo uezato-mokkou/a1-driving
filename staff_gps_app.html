@@ -504,7 +504,12 @@
     <!-- 目的地 -->
     <div class="input-row">
       <label>目的地</label>
-      <input type="text" id="ride-destination" placeholder="川平方面・○○ホテル" autocomplete="off">
+      <div class="dep-wrapper" style="flex:1">
+        <input type="text" id="ride-destination"
+               placeholder="▼ タップでリスト / 直接入力OK" autocomplete="off"
+               style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%">
+        <div id="dest-list" class="dep-list hidden"></div>
+      </div>
     </div>
   </div>
 
@@ -964,12 +969,23 @@ function openJoinModal() {
 async function joinExistingShift() {
   if (!joinSelectedCar) { alert('車両を選択してください'); return; }
   const carId = CARS[joinSelectedCar].id;
-  const data = await sbGet(`/rest/v1/shifts?car_id=eq.${carId}&date=eq.${todayISO()}&status=eq.active&limit=1`);
+  // activeシフトがなければ直近3日のシフトも検索（終業済みを含む）
+  let data = await sbGet(`/rest/v1/shifts?car_id=eq.${carId}&status=eq.active&order=created_at.desc&limit=1`);
   if (!data || data.length === 0) {
-    alert('本日のシフトが見つかりません。\n先に始業登録してください。');
+    const threeDaysAgo = (() => {
+      const d = new Date(); d.setDate(d.getDate()-3);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    })();
+    data = await sbGet(`/rest/v1/shifts?car_id=eq.${carId}&date=gte.${threeDaysAgo}&order=created_at.desc&limit=1`);
+  }
+  if (!data || data.length === 0) {
+    alert('シフトが見つかりません。\n先に始業登録してください。');
     return;
   }
   const shift = data[0];
+  const prevShiftId = state.shiftId;
+  const prevRides   = [...(state.rides || [])]; // 既存ライドを退避
+
   state.car         = joinSelectedCar;
   state.shiftId     = shift.id;
   state.shiftDate   = shift.date;
@@ -982,8 +998,9 @@ async function joinExistingShift() {
   state.staffChanges = [];
   state.weather     = shift.weather || '晴れ';
   state.startMeter  = shift.start_meter || 0;
-  state.rides       = [];
-  state.shiftDate   = shift.date;
+
+  // 同じシフトなら既存ライドを保持、別シフトなら空にしてSupabaseから取得
+  state.rides = (shift.id === prevShiftId) ? prevRides : [];
   await syncRidesFromSupabase();
   saveState();
   document.getElementById('modal-join').classList.add('hidden');
@@ -1561,13 +1578,22 @@ async function respondToRequest(status) {
 // ============================================================
 // カスタム出発地ドロップダウン（スマホ対応・スクロール検出）
 // ============================================================
-let customLocations = {}; // Supabaseから取得したカスタム場所
+let customLocations = {};     // 出発地（category: departure / general）
+let customDestinations = {};  // 目的地（category: destination）
 
 async function loadCustomLocations() {
   const data = await sbGet('/rest/v1/locations?order=name.asc') || [];
   customLocations = {};
+  customDestinations = {};
   data.forEach(l => {
-    if (l.name) customLocations[l.name] = { lat: l.lat || 0, lng: l.lng || 0 };
+    if (!l.name) return;
+    const cat = l.category || 'departure';
+    const coord = { lat: l.lat || 0, lng: l.lng || 0 };
+    if (cat === 'destination') {
+      customDestinations[l.name] = coord;
+    } else {
+      customLocations[l.name] = coord; // departure / general どちらも出発地扱い
+    }
   });
 }
 
@@ -1632,12 +1658,55 @@ function initDepartureDropdown() {
 }
 
 // ============================================================
+// 目的地ドロップダウン（出発地と同じ仕組み）
+// ============================================================
+function initDestinationDropdown() {
+  const input = document.getElementById('ride-destination');
+  const list  = document.getElementById('dest-list');
+  let startY = 0, moved = false, justSel = false;
+
+  function getItems(q) {
+    const all = [...Object.keys(customDestinations)].sort((a,b) => a.localeCompare(b,'ja'));
+    return q ? all.filter(s => s.includes(q)) : all;
+  }
+  function renderList(q) {
+    const items = getItems((q||'').trim());
+    if (items.length === 0) { list.classList.add('hidden'); return; }
+    list.innerHTML = items.map(s => `<div class="dep-list-item">${s}</div>`).join('');
+    list.classList.remove('hidden');
+  }
+  function selectItem(text) {
+    input.value = text; list.classList.add('hidden');
+    justSel = true; setTimeout(() => { justSel = false; }, 600);
+  }
+  list.addEventListener('touchstart', e => { startY = e.touches[0].clientY; moved = false; }, { passive: true });
+  list.addEventListener('touchmove',  e => { if (Math.abs(e.touches[0].clientY - startY) > 8) moved = true; }, { passive: true });
+  list.addEventListener('touchend', e => {
+    if (moved) return;
+    const item = e.target.closest('.dep-list-item');
+    if (!item) return;
+    e.preventDefault(); e.stopPropagation();
+    selectItem(item.textContent); input.blur();
+  });
+  list.addEventListener('mousedown', e => {
+    const item = e.target.closest('.dep-list-item');
+    if (!item) return;
+    e.preventDefault(); selectItem(item.textContent);
+  });
+  input.addEventListener('focus', () => { if (!justSel) renderList(input.value); });
+  input.addEventListener('click', () => { if (!justSel) renderList(input.value); });
+  input.addEventListener('input', () => { if (!justSel) renderList(input.value); });
+  input.addEventListener('blur',  () => setTimeout(() => list.classList.add('hidden'), 300));
+}
+
+// ============================================================
 // DOMContentLoaded
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   initSetup();
   loadCustomLocations();
   initDepartureDropdown();
+  initDestinationDropdown();
 
   // ── メイン画面
   document.getElementById('btn-new-ride').addEventListener('click', startNewRide);

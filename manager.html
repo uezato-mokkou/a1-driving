@@ -410,11 +410,19 @@ let activeShifts = {}; // { car_id: shiftData }
 let activeRideTab = null;
 
 async function fetchActiveShifts() {
-  const data = await sbGet(`/rest/v1/shifts?date=eq.${todayISO}&status=eq.active`);
+  // 日付フィルターなし・active限定なし → 直近3日以内の有効シフト（ended含む）を全取得
+  const threeDaysAgo = (() => {
+    const d = new Date(); d.setDate(d.getDate() - 3);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
+  const data = await sbGet(`/rest/v1/shifts?date=gte.${threeDaysAgo}&order=created_at.desc`);
   if (!data) return;
 
+  // 車ごとに最新のシフトを1件だけ保持
   const newActive = {};
-  data.forEach(s => { newActive[s.car_id] = s; });
+  data.forEach(s => {
+    if (!newActive[s.car_id]) newActive[s.car_id] = s; // 最新が先頭（order=desc）
+  });
   activeShifts = newActive;
 
   renderVehiclePanels();
@@ -451,6 +459,8 @@ function renderVehiclePanels() {
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
           ${shift.driver1_name||''}／${shift.driver2_name||''}
+          ${shift.date !== todayISO ? `<span style="color:var(--yellow);margin-left:6px">📅 ${shift.date}</span>` : ''}
+          ${shift.status === 'ended' ? `<span style="color:var(--red);margin-left:6px">終業済</span>` : ''}
         </div>
         <div class="vc-metrics">
           <div class="vc-metric"><div class="val" id="dist-${carId}">—</div><div class="lbl">km</div></div>
@@ -652,7 +662,15 @@ function updateRidesTabs() {
 
 async function fetchTodayRides(carId) {
   if (!carId) return;
-  const data = await sbGet(`/rest/v1/rides?car_id=eq.${carId}&date=eq.${todayISO}&order=created_at.asc`);
+  const shift = activeShifts[carId];
+  // shift_idが取れればそれで絞り込む（最も正確）。なければcar_idで直近3日分
+  const query = shift && shift.id
+    ? `/rest/v1/rides?shift_id=eq.${shift.id}&order=seq_num.asc`
+    : `/rest/v1/rides?car_id=eq.${carId}&date=gte.${(() => {
+        const d = new Date(); d.setDate(d.getDate()-3);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      })()}&order=created_at.asc`;
+  const data = await sbGet(query);
   if (!data) return;
   renderRidesTable(data);
 }
