@@ -266,7 +266,11 @@
 
 <!-- 乗務記録 -->
 <div class="section">
-  <div class="section-title">📋 本日の乗務記録</div>
+  <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+    <span>📋 乗務記録</span>
+    <input type="date" id="ride-date-input"
+      style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px">
+  </div>
   <div class="rides-tabs" id="rides-tabs">
     <!-- 動的に生成 -->
   </div>
@@ -406,28 +410,45 @@ function makeMarkerIcon(carId, status) {
 // ============================================================
 // 出勤中の車（shifts テーブルから取得）
 // ============================================================
-let activeShifts = {}; // { car_id: shiftData }
+let activeShifts = {}; // { car_id: shiftData }  ← status=active のみ
+let rideShifts   = {}; // { car_id: shiftData }  ← 乗務記録用（選択日付のシフト）
 let activeRideTab = null;
 
 async function fetchActiveShifts() {
-  // 日付フィルターなし・active限定なし → 直近3日以内の有効シフト（ended含む）を全取得
-  const threeDaysAgo = (() => {
-    const d = new Date(); d.setDate(d.getDate() - 3);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  })();
-  const data = await sbGet(`/rest/v1/shifts?date=gte.${threeDaysAgo}&order=created_at.desc`);
+  // status=active のシフトのみ取得（出勤中の車のみ表示）
+  const data = await sbGet('/rest/v1/shifts?status=eq.active');
   if (!data) return;
 
-  // 車ごとに最新のシフトを1件だけ保持
   const newActive = {};
-  data.forEach(s => {
-    if (!newActive[s.car_id]) newActive[s.car_id] = s; // 最新が先頭（order=desc）
-  });
+  data.forEach(s => { newActive[s.car_id] = s; });
   activeShifts = newActive;
 
   renderVehiclePanels();
-  updateRidesTabs();
   updateReqCarSelect();
+}
+
+// ============================================================
+// 乗務記録：日付選択 → シフト取得 → 乗務タブ表示
+// ============================================================
+function initRideDateInput() {
+  const input = document.getElementById('ride-date-input');
+  input.value = todayISO;
+  input.addEventListener('change', () => fetchRidesForDate(input.value));
+  fetchRidesForDate(todayISO);
+}
+
+async function fetchRidesForDate(date) {
+  if (!date) return;
+  // 指定日のシフトを全件取得（status不問）
+  const data = await sbGet(`/rest/v1/shifts?date=eq.${date}&order=created_at.asc`);
+  if (!data) return;
+
+  rideShifts = {};
+  data.forEach(s => {
+    if (!rideShifts[s.car_id]) rideShifts[s.car_id] = s;
+  });
+
+  updateRidesTabs();
 }
 
 function renderVehiclePanels() {
@@ -638,41 +659,50 @@ function renderReqList() {
 function updateRidesTabs() {
   const tabsEl = document.getElementById('rides-tabs');
   tabsEl.innerHTML = '';
-  const ids = Object.keys(activeShifts);
-  if (ids.length === 0) return;
+  const ids = Object.keys(rideShifts);
+  if (ids.length === 0) {
+    // 記録なし表示
+    renderRidesTable([]);
+    activeRideTab = null;
+    return;
+  }
   ids.forEach((carId, i) => {
-    const def = CAR_DEFS[carId] || {};
-    const tab = document.createElement('div');
+    const def   = CAR_DEFS[carId] || {};
+    const shift = rideShifts[carId];
+    const ended = shift.status === 'ended';
+    const tab   = document.createElement('div');
     tab.className = 'rides-tab' + (i === 0 ? ' active' : '');
     tab.dataset.car = carId;
-    tab.textContent = `🚗 ${def.name}`;
+    tab.textContent = `🚗 ${def.name}${ended ? '（終業）' : ''}`;
     tab.addEventListener('click', function() {
       document.querySelectorAll('.rides-tab').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       activeRideTab = this.dataset.car;
-      fetchTodayRides(activeRideTab);
+      fetchRidesByShift(activeRideTab);
     });
     tabsEl.appendChild(tab);
   });
-  if (ids.length > 0 && !activeRideTab) {
-    activeRideTab = ids[0];
-    fetchTodayRides(activeRideTab);
-  }
+  // 最初のタブを自動選択
+  activeRideTab = ids[0];
+  fetchRidesByShift(activeRideTab);
 }
 
-async function fetchTodayRides(carId) {
+async function fetchRidesByShift(carId) {
   if (!carId) return;
-  const shift = activeShifts[carId];
-  // shift_idが取れればそれで絞り込む（最も正確）。なければcar_idで直近3日分
-  const query = shift && shift.id
-    ? `/rest/v1/rides?shift_id=eq.${shift.id}&order=seq_num.asc`
-    : `/rest/v1/rides?car_id=eq.${carId}&date=gte.${(() => {
-        const d = new Date(); d.setDate(d.getDate()-3);
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      })()}&order=created_at.asc`;
-  const data = await sbGet(query);
+  const shift = rideShifts[carId];
+  if (!shift || !shift.id) {
+    renderRidesTable([]);
+    return;
+  }
+  const data = await sbGet(`/rest/v1/rides?shift_id=eq.${shift.id}&order=seq_num.asc`);
   if (!data) return;
   renderRidesTable(data);
+}
+
+// ポーリング用：現在選択中タブのデータを更新
+async function refreshActiveRideTab() {
+  if (!activeRideTab) return;
+  await fetchRidesByShift(activeRideTab);
 }
 
 function renderRidesTable(rides) {
@@ -735,7 +765,9 @@ async function poll() {
   await fetchActiveShifts();
   await fetchVehicles();
   await fetchRequests();
-  if (activeRideTab) await fetchTodayRides(activeRideTab);
+  // 選択中の日付が今日の場合のみ乗務タブを自動リフレッシュ
+  const rideDate = document.getElementById('ride-date-input').value;
+  if (rideDate === todayISO) await refreshActiveRideTab();
 }
 
 // ============================================================
@@ -789,6 +821,7 @@ function initPickupDropdown() {
 
 // 初回
 initPickupDropdown();
+initRideDateInput();
 poll();
 // 5秒ごと
 setInterval(poll, 5000);
