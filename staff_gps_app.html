@@ -800,10 +800,19 @@ let state = {
 function saveState() {
   try { localStorage.setItem('a1_shift', JSON.stringify(state)); } catch(e) {}
 }
+function yesterdayISO() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
 function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem('a1_shift') || 'null');
-    if (s && s.shiftDate === todayISO()) { state = { ...state, ...s }; return true; }
+    if (!s) return false;
+    // 今日または昨日のシフトを復元（夜勤で日付をまたぐケースに対応）
+    if (s.shiftDate === todayISO() || s.shiftDate === yesterdayISO()) {
+      state = { ...state, ...s };
+      return true;
+    }
   } catch(e) {}
   return false;
 }
@@ -1890,8 +1899,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (carLetter) {
       // まずLocalStorageを確認（ページ更新時でも乗務記録を保持）
       const restored = loadState();
-      if (restored && state.car === carLetter && state.shiftDate === todayISO() && state.screen && state.screen !== 'setup') {
-        // 同じ車・今日のシフトが保存されている → LocalStorageから復元
+      if (restored && state.car === carLetter && (state.shiftDate === todayISO() || state.shiftDate === yesterdayISO()) && state.screen && state.screen !== 'setup') {
+        // 同じ車・今日または昨日のシフトが保存されている → LocalStorageから復元
         const scr = (state.screen === 'ride') ? 'main' : state.screen;
         showScreen(scr);
         if (scr === 'main') renderMain();
