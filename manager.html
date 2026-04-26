@@ -438,12 +438,21 @@ function initRideDateInput() {
   fetchRidesForDate(todayISO, false);
 }
 
-// rides テーブルを date で直接検索（シフト経由しない）
+// rides テーブルを直接検索（シフト経由しない）
+// 「今日」は created_at で直近36時間を取得（夜勤シフトの date ズレを回避）
+// 過去日付は date カラムで取得
 // preserveTab=true のとき現在選択中のタブを維持
 async function fetchRidesForDate(date, preserveTab = false) {
   if (!date) return;
-  // rides テーブルを日付で直接検索（シフト複数重複の影響なし）
-  const data = await sbGet(`/rest/v1/rides?date=eq.${date}&order=seq_num.asc`);
+  let apiPath;
+  if (date === todayISO) {
+    // 直近36時間以内に作成されたライドを取得
+    const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+    apiPath = `/rest/v1/rides?created_at=gte.${since}&order=created_at.asc`;
+  } else {
+    apiPath = `/rest/v1/rides?date=eq.${date}&order=created_at.asc`;
+  }
+  const data = await sbGet(apiPath);
   if (!data) return;
 
   // car_id ごとにグループ化

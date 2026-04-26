@@ -1301,11 +1301,11 @@ async function doArrive() {
   pushVehicle('waiting');
 }
 
-function doCompleteRide() {
-  const fareVal    = parseInt(document.getElementById('fare-edit').value) || rideFare;
-  const notes      = document.getElementById('ride-notes').value;
-  const customer   = document.getElementById('ride-customer').value;
-  const departure  = document.getElementById('ride-departure').value;
+async function doCompleteRide() {
+  const fareVal     = parseInt(document.getElementById('fare-edit').value) || rideFare;
+  const notes       = document.getElementById('ride-notes').value;
+  const customer    = document.getElementById('ride-customer').value;
+  const departure   = document.getElementById('ride-departure').value;
   const destination = document.getElementById('ride-destination').value;
 
   const ride = {
@@ -1319,22 +1319,51 @@ function doCompleteRide() {
   state._tmpRide = null;
   saveState();
 
-  sbPost('/rest/v1/rides', {
-    shift_id: state.shiftId || null,
-    car_id: CARS[state.car].id, seq_num: ride.seq,
-    customer_name: ride.customer, departure: ride.departure,
-    destination: ride.destination, departure_time: ride.depTime,
-    arrival_time: ride.arrTime, duration_min: ride.durationMin,
-    distance: ride.distance, fare: ride.fare, fare_type: rideFareType,
-    payment_type: ride.payment, notes: ride.notes,
-    arrival_place: ride.arrivalPlace, arrival_lat: ride.arrivalLat, arrival_lng: ride.arrivalLng,
-    departure_lat: ride.depLat, departure_lng: ride.depLng,
-    route: ride.route || null,
-    date: state.shiftDate || todayISO()
-  }, 'return=minimal').catch(()=>{});
-
+  // 画面は先に遷移
   showScreen('main');
   renderMain();
+
+  // Supabaseへ確実に保存（失敗を明示的に通知）
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/rides', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        shift_id:      state.shiftId || null,
+        car_id:        CARS[state.car].id,
+        seq_num:       ride.seq,
+        customer_name: ride.customer,
+        departure:     ride.departure,
+        destination:   ride.destination,
+        departure_time: ride.depTime,
+        arrival_time:  ride.arrTime,
+        duration_min:  ride.durationMin,
+        distance:      ride.distance,
+        fare:          ride.fare,
+        fare_type:     rideFareType,
+        payment_type:  ride.payment,
+        notes:         ride.notes,
+        arrival_place: ride.arrivalPlace,
+        arrival_lat:   ride.arrivalLat,
+        arrival_lng:   ride.arrivalLng,
+        departure_lat: ride.depLat,
+        departure_lng: ride.depLng,
+        route:         ride.route || null,
+        date:          state.shiftDate || todayISO()
+      })
+    });
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      console.error('乗務保存エラー', r.status, errText);
+      alert(`⚠️ 乗務記録のサーバー保存に失敗しました\nエラー: ${r.status}\n再度ネットワークを確認してください`);
+    }
+  } catch(e) {
+    console.error('乗務保存ネットワークエラー', e);
+    alert('⚠️ ネットワークエラー\n乗務記録のサーバー送信に失敗しました\nWi-Fiを確認してください');
+  }
 }
 
 // GPS コールバック
