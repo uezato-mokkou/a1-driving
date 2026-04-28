@@ -277,10 +277,10 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th></tr>
+        <tr><th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>備考</th><th>経路</th></tr>
       </thead>
       <tbody id="rides-tbody">
-        <tr><td colspan="10" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
+        <tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
       </tbody>
     </table>
   </div>
@@ -711,7 +711,7 @@ function renderRidesTable(rides) {
   const tbody   = document.getElementById('rides-tbody');
   const totalEl = document.getElementById('rides-total');
   if (!rides || rides.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
     totalEl.style.display = 'none';
     return;
   }
@@ -723,6 +723,10 @@ function renderRidesTable(rides) {
     const payLabel = r.payment_type === 'cash' ? '現金' : 'カード等';
     const dist = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
     const dur  = r.duration_min > 0 ? r.duration_min+'分' : '—';
+    // お客様名
+    const custCell = r.customer_name
+      ? `<span style="font-size:11px;max-width:60px;display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:middle">${r.customer_name}</span>`
+      : '—';
     // 出発地リンク
     const depUrl = r.departure_lat
       ? `https://maps.google.com/?q=${r.departure_lat},${r.departure_lng}`
@@ -734,6 +738,11 @@ function renderRidesTable(rides) {
       ? `https://maps.google.com/?q=${r.arrival_lat},${r.arrival_lng}`
       : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||''))}`;
     const destCell = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+    // 備考（クリックでポップアップ）
+    const notesCell = r.notes
+      ? `<span style="cursor:pointer;font-size:16px" title="${r.notes.replace(/"/g,'&quot;')}"
+             onclick="alert('【備考】\\n${r.notes.replace(/'/g,"\\'").replace(/\n/g,'\\n')}')">📝</span>`
+      : '—';
     // 経路
     const routeUrl = (r.departure_lat && r.arrival_lat)
       ? `https://maps.google.com/maps/dir/${r.departure_lat},${r.departure_lng}/${r.arrival_lat},${r.arrival_lng}`
@@ -741,13 +750,15 @@ function renderRidesTable(rides) {
     const hasRoute = r.arrival_lat || r.destination || r.arrival_place;
     return `<tr>
       <td>${i+1}</td>
+      <td style="max-width:60px">${custCell}</td>
       <td>${r.departure_time||'—'}</td>
-      <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${depCell}</td>
+      <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${depCell}</td>
       <td>${r.arrival_time||'—'}</td>
-      <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${destCell}</td>
+      <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${destCell}</td>
       <td>${dur}</td><td>${dist}</td>
       <td style="font-weight:700">¥${fare.toLocaleString()}</td>
       <td class="${payClass}">${payLabel}</td>
+      <td>${notesCell}</td>
       <td>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
     </tr>`;
   }).join('');
