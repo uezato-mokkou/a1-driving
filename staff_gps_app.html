@@ -13,6 +13,10 @@
   <meta name="theme-color" content="#3b82f6">
   <link rel="apple-touch-icon" href="icon-512.png">
   <link rel="icon" type="image/png" href="icon-512.png">
+  <!-- 常に最新バージョンを読み込む -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <!-- Leaflet (ルートマップ用) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -564,6 +568,17 @@
       </div>
     </div>
 
+    <!-- 駐車アラート -->
+    <div id="parking-alert" class="hidden" style="
+        background:#7c3aed;color:#fff;border-radius:10px;padding:12px 16px;
+        margin:0 0 10px;display:flex;align-items:center;gap:10px;font-size:14px">
+      <span style="font-size:22px">🅿️</span>
+      <div>
+        <div style="font-weight:700">駐車 <span id="parking-min">3</span> 分以上</div>
+        <div style="font-size:12px;opacity:.9">到着時に駐車料金（+200円）の追加を検討してください</div>
+      </div>
+    </div>
+
     <button class="btn btn-red" id="btn-arrive">🏁 到着（計測ストップ）</button>
   </div>
 
@@ -575,6 +590,26 @@
         <div class="al-name" id="arrival-place-name">取得中...</div>
         <div class="al-addr" id="arrival-full-addr"></div>
         <a class="al-map" id="arrival-map-link" href="#" target="_blank">🗺 マップで開く</a>
+      </div>
+    </div>
+
+    <!-- 距離修正（到着後） -->
+    <div class="section">
+      <div class="section-title">🛣 走行距離の確認・修正</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+        GPS参考距離：<b id="gps-dist-ref" style="color:var(--text)">0.00 km</b>
+        <br>車のトリップメーターで確認し、正しい距離を入力してください
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="number" id="dist-edit" step="0.1" min="0" inputmode="decimal"
+               style="width:90px;font-size:20px;font-weight:700;padding:8px;text-align:center;
+                      border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--text)">
+        <span style="font-size:16px;font-weight:700;color:var(--muted)">km</span>
+        <button id="btn-dist-recalc"
+                style="padding:8px 14px;background:var(--accent);color:#fff;border:none;
+                       border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+          ↩ 再計算
+        </button>
       </div>
     </div>
 
@@ -1186,6 +1221,9 @@ let rideCurrentLat = null, rideCurrentLng = null;
 let rideFare = 0, ridePayment = 'cash', rideFareType = 'general';
 let depLat = null, depLng = null, isFirstGpsPos = true;
 let rideWaypoints = [], waypointLastPos = null;  // ← ルート記録用
+// 駐車検知
+let parkingCheckPos  = null;  // 停車を検知した位置
+let parkingCheckTime = null;  // 停車開始時刻
 
 function startNewRide() {
   rideDist = 0; rideLastPos = null;
@@ -1193,6 +1231,8 @@ function startNewRide() {
   rideStartTime = null; rideFare = 0;
   ridePayment = 'cash'; rideFareType = state.fareType || 'general';
   rideWaypoints = []; waypointLastPos = null;  // ← ルートリセット
+  parkingCheckPos = null; parkingCheckTime = null; // ← 駐車検知リセット
+  hideParkingAlert();
 
   const seq = state.rides.length + 1;
   document.getElementById('ride-title').textContent = `🚗 代行 #${seq}`;
@@ -1269,6 +1309,11 @@ async function doArrive() {
   // GPS監視は停止しない（待機中も位置送信を継続）
   if (rideTimer) { clearInterval(rideTimer); rideTimer = null; }
   document.getElementById('gps-text').textContent = `計測完了（${rideDist.toFixed(2)}km）`;
+  hideParkingAlert(); // 駐車アラートを消す
+
+  // 距離修正フィールドにGPS距離をセット（参考値として表示）
+  document.getElementById('gps-dist-ref').textContent = rideDist.toFixed(2) + ' km';
+  document.getElementById('dist-edit').value = rideDist.toFixed(1);
 
   rideFare = calcFare(rideDist, rideFareType);
   document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
@@ -1316,9 +1361,13 @@ async function doCompleteRide() {
   const customer    = document.getElementById('ride-customer').value;
   const departure   = document.getElementById('ride-departure').value;
   const destination = document.getElementById('ride-destination').value;
+  // トリップメーター修正距離（入力があれば優先、なければGPS距離）
+  const correctedDist = parseFloat(document.getElementById('dist-edit').value) || rideDist;
 
   const ride = {
-    ...state._tmpRide, customer, departure, destination,
+    ...state._tmpRide,
+    distance: correctedDist, // 修正済み距離で上書き
+    customer, departure, destination,
     fare: fareVal, payment: ridePayment, notes,
     depLat, depLng,
     driver1: state.currentDriver1 || state.driver1Name,
@@ -1428,7 +1477,40 @@ function onGpsPos(pos) {
     waypointLastPos = { lat, lng };
   }
 
+  // 駐車検知（乗務中のみ）
+  if (rideStartTime) {
+    if (parkingCheckPos) {
+      const dFromPark = haversine(parkingCheckPos.lat, parkingCheckPos.lng, lat, lng);
+      if (dFromPark < 0.03) {
+        // 30m以内 = 停車継続
+        const stoppedMin = parkingCheckTime ? Math.floor((Date.now() - parkingCheckTime) / 60000) : 0;
+        if (stoppedMin >= 3) showParkingAlert(stoppedMin);
+      } else {
+        // 30m以上移動 = 走行再開
+        parkingCheckPos  = { lat, lng };
+        parkingCheckTime = null;
+        hideParkingAlert();
+      }
+    } else {
+      parkingCheckPos  = { lat, lng };
+      parkingCheckTime = Date.now();
+    }
+  }
+
   pushVehicleLocation(lat, lng);
+}
+function showParkingAlert(min) {
+  const el = document.getElementById('parking-alert');
+  if (!el || !el.classList.contains('hidden')) {
+    if (el) document.getElementById('parking-min').textContent = min;
+    return;
+  }
+  el.classList.remove('hidden');
+  document.getElementById('parking-min').textContent = min;
+}
+function hideParkingAlert() {
+  const el = document.getElementById('parking-alert');
+  if (el) el.classList.add('hidden');
 }
 function onGpsErr(err) {
   document.getElementById('gps-dot').classList.remove('on');
@@ -1869,6 +1951,17 @@ document.addEventListener('DOMContentLoaded', function() {
     rideFare = parseInt(this.value) || 0;
     document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
   });
+
+  // 距離修正 → 料金自動再計算
+  function recalcFareFromDist() {
+    const km = parseFloat(document.getElementById('dist-edit').value);
+    if (isNaN(km) || km < 0) return;
+    rideFare = calcFare(km, rideFareType);
+    document.getElementById('fare-display').textContent = `¥${rideFare.toLocaleString()}`;
+    document.getElementById('fare-edit').value = rideFare;
+  }
+  document.getElementById('dist-edit').addEventListener('change', recalcFareFromDist);
+  document.getElementById('btn-dist-recalc').addEventListener('click', recalcFareFromDist);
   // 出発地マップボタン
   document.getElementById('dep-map-btn').addEventListener('click', () => {
     const name = document.getElementById('ride-departure').value.trim();
