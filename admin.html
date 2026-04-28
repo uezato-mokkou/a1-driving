@@ -776,6 +776,7 @@ async function loadLocations() {
   const data = await sbGet('/rest/v1/locations?order=name.asc') || [];
   locList = data;
   renderLocList();
+  renderLocMapMarkers(); // マップ上に全ピンを表示
 }
 
 function renderLocList() {
@@ -907,8 +908,37 @@ document.getElementById('btn-init-staff').addEventListener('click', async functi
 // ★ 出発地点登録マップ
 // ============================================================
 let locMap = null;
-let locMapMarker = null;
+let locMapMarker = null;       // 編集中ピン（1個）
+let locMapAllMarkers = [];     // 登録済み全ピン
 const ISHIGAKI_CENTER = [24.3448, 124.1572];
+
+// 登録済み全地点をマップにピン表示
+function renderLocMapMarkers() {
+  if (!locMap) return;
+  // 既存の全ピンを削除
+  locMapAllMarkers.forEach(m => m.remove());
+  locMapAllMarkers = [];
+
+  locList.forEach(l => {
+    if (!l.lat || !l.lng) return;
+    const cat   = l.category || 'departure';
+    const color = cat === 'destination' ? '#f97316' : '#3b82f6'; // 出発=青、目的地=橙
+    const icon  = L.divIcon({
+      className: '',
+      html: `<div style="background:${color};color:#fff;font-size:11px;padding:2px 5px;
+                         border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);
+                         max-width:90px;overflow:hidden;text-overflow:ellipsis">${l.name}</div>`,
+      iconAnchor: [0, 10]
+    });
+    const m = L.marker([parseFloat(l.lat), parseFloat(l.lng)], { icon })
+      .addTo(locMap)
+      .bindPopup(`<b>${l.name}</b><br>${cat === 'destination' ? '目的地' : '出発地'}<br>
+                  lat: ${l.lat}<br>lng: ${l.lng}<br>
+                  <a href="https://maps.google.com/?q=${l.lat},${l.lng}" target="_blank">Googleマップで確認</a>`);
+    m.on('click', () => editLoc(l.id)); // クリックで編集フォームへ
+    locMapAllMarkers.push(m);
+  });
+}
 
 function initLocMap() {
   if (locMap) return;
@@ -953,7 +983,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (this.dataset.tab === 'location') {
       setTimeout(() => {
         initLocMap();
-        if (locMap) locMap.invalidateSize();
+        if (locMap) {
+          locMap.invalidateSize();
+          renderLocMapMarkers(); // タブを開くたびに最新ピンを再描画
+        }
       }, 100);
     }
   });

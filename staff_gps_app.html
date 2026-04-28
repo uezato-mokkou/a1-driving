@@ -1873,8 +1873,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('dep-map-btn').addEventListener('click', () => {
     const name = document.getElementById('ride-departure').value.trim();
     if (!name) { alert('出発地を入力してください'); return; }
-    const spot = SPOTS[name];
-    const url = spot
+    // SPOTS（ハードコード）→ customLocations（Supabase）の順で座標を検索
+    const spot = SPOTS[name] || (customLocations && customLocations[name]);
+    const url = spot && (spot.lat || spot.lng)
       ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
       : `https://maps.google.com/?q=${encodeURIComponent('石垣島 ' + name)}`;
     window.open(url, '_blank');
