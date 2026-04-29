@@ -1157,19 +1157,17 @@ async function syncRidesFromSupabase() {
     const local = state.rides.find(lr => lr.seq === r.seq_num);
     if (local) {
       if (!local.id) { local.id = r.id; changed = true; }
-      // 他端末での編集を反映（編集フラグがない場合のみ上書き）
-      const newDep  = r.departure   || '';
-      const newDest = r.destination || '';
-      const newCust = r.customer_name || '';
-      const newNote = r.notes || '';
-      if (local.departure !== newDep || local.destination !== newDest ||
-          local.customer  !== newCust || local.notes !== newNote) {
-        local.departure   = newDep;
-        local.destination = newDest;
-        local.customer    = newCust;
-        local.notes       = newNote;
-        changed = true;
-      }
+      // 他端末での編集を反映
+      // ★ Supabaseの値が空の場合はローカル値を上書きしない（上書き禁止）
+      const sbDep  = r.departure     || '';
+      const sbDest = r.destination   || '';
+      const sbCust = r.customer_name || '';
+      const sbNote = r.notes         || '';
+      if (sbDep  && local.departure   !== sbDep)  { local.departure   = sbDep;  changed = true; }
+      if (sbDest && local.destination !== sbDest) { local.destination = sbDest; changed = true; }
+      if (sbCust && local.customer    !== sbCust) { local.customer    = sbCust; changed = true; }
+      // notesは空への変更も許容（意図的な削除をサポート）
+      if (local.notes !== sbNote) { local.notes = sbNote; changed = true; }
     }
   });
 
@@ -1270,11 +1268,11 @@ function renderRideTable() {
         : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
     }
     const depCell = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
-    // 到着地マップリンク（GPS優先）
+    // 到着地マップリンク（GPS座標優先）、表示ラベルは手動入力の目的地を優先
     const destUrl = r.arrivalLat
       ? `https://maps.google.com/?q=${r.arrivalLat},${r.arrivalLng}`
-      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.arrivalPlace||r.destination||''))}`;
-    const destLabel = r.arrivalPlace || r.destination || '—';
+      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||r.arrivalPlace||''))}`;
+    const destLabel = r.destination || r.arrivalPlace || '—';
     const destCell  = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
     // 経路リンク
     const _depSpot = SPOTS[r.departure] || (customLocations && customLocations[r.departure]);
@@ -2061,15 +2059,9 @@ document.addEventListener('DOMContentLoaded', function() {
   initDestinationDropdown();
   initCustomerAutocomplete();
 
-  // ── メイン画面 更新ボタン
-  document.getElementById('btn-reload').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-reload');
-    btn.textContent = '⟳ 取得中';
-    btn.disabled = true;
-    await syncRidesFromSupabase();
-    renderMain();
-    btn.textContent = '🔄 更新';
-    btn.disabled = false;
+  // ── メイン画面 更新ボタン（リロード）
+  document.getElementById('btn-reload').addEventListener('click', () => {
+    location.reload();
   });
 
   // ── メイン画面

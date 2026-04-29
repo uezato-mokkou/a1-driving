@@ -292,6 +292,13 @@
   <h1>🗺 A1運転代行 管理画面</h1>
   <div style="display:flex;align-items:center;gap:8px">
     <span class="conn-badge conn-off" id="conn-badge">接続中...</span>
+    <button onclick="location.reload()"
+      style="background:rgba(59,130,246,.2);border:1px solid rgba(59,130,246,.4);
+             color:var(--accent);border-radius:8px;padding:5px 12px;font-size:12px;
+             font-weight:700;cursor:pointer;white-space:nowrap;
+             touch-action:manipulation;-webkit-tap-highlight-color:transparent">
+      🔄 更新
+    </button>
     <a href="admin.html" class="admin-link">⚙️ 管理</a>
   </div>
 </header>
@@ -602,9 +609,9 @@ async function fetchRidesForDate(date, preserveTab = false) {
   let apiPath;
   if (date === todayISO) {
     // 今日と昨日（深夜シフト対応）の両方を取得
-    apiPath = `/rest/v1/rides?date=in.(${todayISO},${yesterdayISO()})&order=seq_num.asc`;
+    apiPath = `/rest/v1/rides?date=in.(${todayISO},${yesterdayISO()})&order=created_at.asc`;
   } else {
-    apiPath = `/rest/v1/rides?date=eq.${date}&order=seq_num.asc`;
+    apiPath = `/rest/v1/rides?date=eq.${date}&order=created_at.asc`;
   }
   const data = await sbGet(apiPath);
   // 取得失敗時は空配列扱い（既存データは保持しない）
