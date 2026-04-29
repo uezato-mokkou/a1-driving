@@ -653,7 +653,7 @@ function renderVehiclePanels() {
           <div class="vc-name" style="color:${def.color}">🚗 ${def.name}</div>
           <div class="vc-status st-waiting" id="status-${carId}">待機中</div>
         </div>
-        <button class="btn-rides-popup" onclick="openRidesPopup('${carId}')">📋 乗務記録を見る</button>
+        <button class="btn-rides-popup" onclick="openRidesPopup('${carId}')">📋 乗務記録を見る <span id="ride-count-${carId}" style="font-size:12px;font-weight:700;color:var(--accent)"></span></button>
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
           👤 ${shift.driver1_name||'—'}　／　${shift.driver2_name||'—'}
           ${shift.date !== todayISO ? `<span style="color:var(--yellow);margin-left:6px">📅 ${shift.date}</span>` : ''}
@@ -902,8 +902,19 @@ async function deleteRide(id) {
 // ============================================================
 // 乗務記録
 // ============================================================
-// updateRidesTabs: ridesByCar が更新されたら開いているポップアップを更新
+// updateRidesTabs: ridesByCar が更新されたら件数バッジ＋開いているポップアップを更新
 function updateRidesTabs(preserveTab = false) {
+  // 全車両カードの乗務件数バッジをリアルタイム更新
+  Object.keys(activeShifts).forEach(carId => {
+    const rides = ridesByCar[carId] || [];
+    const badge = document.getElementById('ride-count-' + carId);
+    if (badge) {
+      const total = rides.reduce((s, r) => s + (r.fare || 0), 0);
+      badge.textContent = rides.length > 0
+        ? `（${rides.length}件 / ¥${total.toLocaleString()}）`
+        : '';
+    }
+  });
   // ポップアップが開いていればリアルタイム更新
   if (popupCarId) {
     renderRidesModalTable(ridesByCar[popupCarId] || []);
@@ -1163,8 +1174,8 @@ function initPickupDropdown() {
 initPickupDropdown();
 initRideDateInput();
 poll();
-// 5秒ごと
-setInterval(poll, 5000);
+// 3秒ごとにリアルタイム更新
+setInterval(poll, 3000);
 </script>
 </body>
 </html>

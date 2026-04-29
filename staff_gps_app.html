@@ -459,12 +459,12 @@
       <table>
         <thead>
           <tr>
-            <th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th><th>編集</th>
+            <th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th><th>編集</th><th>削除</th>
           </tr>
         </thead>
         <tbody id="ride-tbody">
           <tr id="no-ride-row">
-            <td colspan="12" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
+            <td colspan="13" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
           </tr>
         </tbody>
       </table>
@@ -1391,6 +1391,7 @@ function renderRideTable() {
       <td class="${payClass}">${payLabel}</td>
       <td>${hasRoute ? `<button onclick="showRouteMap(${i})" style="background:none;border:none;font-size:18px;cursor:pointer;padding:0">🗺</button>` : '—'}</td>
       <td><button onclick="openRideEdit(${i})" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="編集">✏️</button></td>
+      <td><button onclick="deleteLocalRide(${i})" style="background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.35);color:#f87171;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:700;cursor:pointer;touch-action:manipulation" title="削除">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -2426,6 +2427,33 @@ async function saveRideEdit() {
   } else if (state.shiftId) {
     await sbPatch(`/rest/v1/rides?shift_id=eq.${state.shiftId}&seq_num=eq.${r.seq}`, patch);
     await syncRidesFromSupabase();
+  }
+}
+
+// ============================================================
+// 乗務記録 削除
+// ============================================================
+async function deleteLocalRide(i) {
+  const r = state.rides[i];
+  if (!r) return;
+  const label = r.customer ? `「${r.customer}」` : `${i+1}件目`;
+  if (!confirm(`${label} の乗務記録を削除しますか？\n（この操作は元に戻せません）`)) return;
+  // ローカル削除
+  state.rides.splice(i, 1);
+  saveState();
+  renderRideTable();
+  renderTotals();
+  // Supabaseからも削除
+  if (r.id) {
+    await fetch(SUPABASE_URL + `/rest/v1/rides?id=eq.${r.id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' }
+    }).catch(() => {});
+  } else if (state.shiftId) {
+    await fetch(SUPABASE_URL + `/rest/v1/rides?shift_id=eq.${state.shiftId}&seq_num=eq.${r.seq}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' }
+    }).catch(() => {});
   }
 }
 
