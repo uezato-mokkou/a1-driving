@@ -448,12 +448,12 @@
       <table>
         <thead>
           <tr>
-            <th>#</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th>
+            <th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th>
           </tr>
         </thead>
         <tbody id="ride-tbody">
           <tr id="no-ride-row">
-            <td colspan="10" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
+            <td colspan="11" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
           </tr>
         </tbody>
       </table>
@@ -1189,8 +1189,12 @@ function renderRideTable() {
       ? `${r.arrivalLat},${r.arrivalLng}`
       : encodeURIComponent(r.arrivalPlace || r.destination || '');
     const hasRoute = r.arrivalLat || r.destination || r.arrivalPlace;
+    const custText = r.customer
+      ? `<span style="font-size:11px;max-width:54px;display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:middle">${r.customer}</span>`
+      : '—';
     return `<tr>
       <td>${i+1}</td>
+      <td style="max-width:54px">${custText}</td>
       <td>${r.depTime||'—'}</td>
       <td style="text-align:left;max-width:65px;overflow:hidden;white-space:nowrap">${depCell}</td>
       <td>${r.arrTime||'—'}</td>
