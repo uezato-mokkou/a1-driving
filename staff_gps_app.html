@@ -1152,49 +1152,49 @@ async function syncRidesFromSupabase() {
   const localSeqs = new Set(state.rides.map(r => r.seq));
   let changed = false;
 
-  // 既存ライドにSupabase idを補完（doCompleteRide時にidが未設定の場合）
-  // また、他端末での編集内容（departure/destination/notes/customer）を反映
+  // 既存ライドにSupabase idを補完し、ローカル↔Supabaseのデータを整合させる
   data.forEach(r => {
     const local = state.rides.find(lr => lr.seq === r.seq_num);
-    if (local) {
-      if (!local.id) {
-        local.id = r.id; changed = true;
-        // Supabaseのレコードが空（保存失敗後に挿入されたプレースホルダ等）の場合、
-        // ローカルの実データでPATCHして補完する
-        if (local.fare > 0 || local.customer || local.departure || local.destination) {
-          sbPatch(`/rest/v1/rides?id=eq.${r.id}`, {
-            customer_name:  local.customer      || null,
-            departure:      local.departure     || null,
-            destination:    local.destination   || null,
-            departure_time: local.depTime       || null,
-            arrival_time:   local.arrTime       || null,
-            duration_min:   local.durationMin   || 0,
-            distance:       local.distance      || 0,
-            fare:           local.fare          || 0,
-            fare_type:      state.fareType      || 'general',
-            payment_type:   local.payment       || 'cash',
-            notes:          local.notes         || null,
-            arrival_place:  local.arrivalPlace  || null,
-            arrival_lat:    local.arrivalLat    || null,
-            arrival_lng:    local.arrivalLng    || null,
-            departure_lat:  local.depLat        || null,
-            departure_lng:  local.depLng        || null,
-            route:          local.route         || null
-          });
-        }
-      }
-      // 他端末での編集を反映
-      // ★ Supabaseの値が空の場合はローカル値を上書きしない（上書き禁止）
-      const sbDep  = r.departure     || '';
-      const sbDest = r.destination   || '';
-      const sbCust = r.customer_name || '';
-      const sbNote = r.notes         || '';
-      if (sbDep  && local.departure   !== sbDep)  { local.departure   = sbDep;  changed = true; }
-      if (sbDest && local.destination !== sbDest) { local.destination = sbDest; changed = true; }
-      if (sbCust && local.customer    !== sbCust) { local.customer    = sbCust; changed = true; }
-      // notesは空への変更も許容（意図的な削除をサポート）
-      if (local.notes !== sbNote) { local.notes = sbNote; changed = true; }
+    if (!local) return;
+
+    // ① id補完（初回）
+    if (!local.id) { local.id = r.id; changed = true; }
+
+    // ② Supabaseに実データがなければローカルの値でPATCH補完
+    //    （保存失敗後のプレースホルダや空レコードへの上書き）
+    //    判定: Supabase側の departure と customer_name が両方空 → 未保存と見なす
+    // departure・customer_name・fare のいずれかが存在 → Supabaseに実データあり
+    // ※ departure_time だけある場合はプレースホルダとみなしてPATCH対象とする
+    const sbHasData = !!(r.departure || r.customer_name || r.fare > 0);
+    if (!sbHasData && local.id) {
+      sbPatch(`/rest/v1/rides?id=eq.${local.id}`, {
+        customer_name:  local.customer     || null,
+        departure:      local.departure    || null,
+        destination:    local.destination  || null,
+        departure_time: local.depTime      || null,
+        arrival_time:   local.arrTime      || null,
+        duration_min:   local.durationMin  || 0,
+        distance:       local.distance     || 0,
+        fare:           local.fare         || 0,
+        fare_type:      state.fareType     || 'general',
+        payment_type:   local.payment      || 'cash',
+        notes:          local.notes        || null,
+        arrival_place:  local.arrivalPlace || null,
+        arrival_lat:    local.arrivalLat   || null,
+        arrival_lng:    local.arrivalLng   || null,
+        departure_lat:  local.depLat       || null,
+        departure_lng:  local.depLng       || null,
+        route:          local.route        || null
+      });
     }
+
+    // ③ Supabaseに実データがあり、ローカルが空の場合のみローカルを更新
+    //    （他端末で入力・編集された値を反映。ローカルに値がある場合は上書きしない）
+    if (r.departure     && !local.departure)   { local.departure   = r.departure;      changed = true; }
+    if (r.destination   && !local.destination) { local.destination = r.destination;    changed = true; }
+    if (r.customer_name && !local.customer)    { local.customer    = r.customer_name;  changed = true; }
+    if (r.departure_time && !local.depTime)    { local.depTime     = r.departure_time; changed = true; }
+    if (r.arrival_time   && !local.arrTime)    { local.arrTime     = r.arrival_time;   changed = true; }
   });
 
   // 新規ライドを追加（他端末で記録されたもの）
@@ -1235,9 +1235,35 @@ async function retryUnsavedRides() {
       `/rest/v1/rides?shift_id=eq.${state.shiftId}&seq_num=eq.${ride.seq}&select=id`
     );
     if (existing && existing[0]) {
-      // 既に保存済み → idだけ記録
+      // Supabaseに既存レコードあり → idを記録し、空ならローカルデータでPATCH補完
       ride.id = existing[0].id;
       anySuccess = true;
+      // 既存レコードにデータがない場合（プレースホルダ）はPATCHで補完
+      const existFull = await sbGet(
+        `/rest/v1/rides?id=eq.${ride.id}&select=departure,customer_name,fare`
+      );
+      const ef = existFull && existFull[0];
+      if (ef && !ef.departure && !ef.customer_name && !(ef.fare > 0)) {
+        await sbPatch(`/rest/v1/rides?id=eq.${ride.id}`, {
+          customer_name:  ride.customer     || null,
+          departure:      ride.departure    || null,
+          destination:    ride.destination  || null,
+          departure_time: ride.depTime      || null,
+          arrival_time:   ride.arrTime      || null,
+          duration_min:   ride.durationMin  || 0,
+          distance:       ride.distance     || 0,
+          fare:           ride.fare         || 0,
+          fare_type:      state.fareType    || 'general',
+          payment_type:   ride.payment      || 'cash',
+          notes:          ride.notes        || null,
+          arrival_place:  ride.arrivalPlace || null,
+          arrival_lat:    ride.arrivalLat   || null,
+          arrival_lng:    ride.arrivalLng   || null,
+          departure_lat:  ride.depLat       || null,
+          departure_lng:  ride.depLng       || null,
+          route:          ride.route        || null
+        });
+      }
       continue;
     }
     // 未保存 → 新規POST
