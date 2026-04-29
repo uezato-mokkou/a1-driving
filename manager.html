@@ -42,7 +42,14 @@
     .conn-off { background: rgba(148,163,184,.15); color: var(--muted); }
 
     /* マップ */
-    #map { height: 320px; z-index: 0; }
+    #map-container { position: relative; }
+    #map { height: 320px; z-index: 0; transition: height .3s ease; }
+    #map-fullscreen-btn {
+      position: absolute; bottom: 10px; right: 10px; z-index: 1000;
+      background: rgba(15,23,42,.88); color: #fff; border: 1px solid rgba(255,255,255,.2);
+      border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+      cursor: pointer; touch-action: manipulation; backdrop-filter: blur(4px);
+    }
 
     /* 車両パネル */
     .vehicle-panels { display: flex; gap: 8px; padding: 8px; flex-wrap: wrap; }
@@ -63,36 +70,54 @@
     .vehicle-card.departing { border-color: var(--yellow); }
     .vehicle-card.hidden-card { display: none; }
 
-    .vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .vc-name { font-size: 15px; font-weight: 800; }
+    .vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .vc-name { font-size: 14px; font-weight: 800; }
     .vc-status {
-      font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 700;
+      font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 700; white-space: nowrap;
     }
-    .st-waiting   { background: rgba(148,163,184,.2); color: var(--muted); }
-    .st-driving   { background: rgba(34,197,94,.2);   color: var(--green); animation: statusBlink 0.8s ease-in-out infinite alternate; }
-    .st-departing { background: rgba(245,158,11,.2);  color: var(--yellow); }
+    .st-waiting    { background: rgba(148,163,184,.2); color: var(--muted); }
+    .st-driving    { background: rgba(34,197,94,.2);   color: var(--green); animation: statusBlink 0.8s ease-in-out infinite alternate; }
+    .st-dispatched { background: rgba(245,158,11,.2);  color: var(--yellow); animation: statusBlink 1.2s ease-in-out infinite alternate; }
     @keyframes statusBlink { from { opacity: 1; } to { opacity: 0.4; } }
 
-    .vc-info { font-size: 12px; color: var(--muted); line-height: 1.8; margin-bottom: 8px; }
+    .vc-info { font-size: 12px; color: var(--muted); line-height: 1.8; margin-bottom: 6px; }
     .vc-info span { color: var(--text); font-weight: 600; }
 
-    .vc-metrics { display: flex; gap: 6px; margin-bottom: 8px; }
-    .vc-metric {
-      flex: 1; background: var(--bg); border-radius: 6px; padding: 6px 8px; text-align: center;
-    }
-    .vc-metric .val { font-size: 16px; font-weight: 800; }
+    .vc-metrics { display: flex; gap: 6px; margin-bottom: 6px; }
+    .vc-metric { flex: 1; background: var(--bg); border-radius: 6px; padding: 5px 8px; text-align: center; }
+    .vc-metric .val { font-size: 15px; font-weight: 800; }
     .vc-metric .lbl { font-size: 10px; color: var(--muted); }
 
     .updated { font-size: 10px; color: var(--muted); text-align: right; }
 
-    /* 走行中バナー */
-    .driving-banner {
-      display: none; background: var(--green); color: #fff;
-      text-align: center; font-size: 12px; font-weight: 800;
-      padding: 4px 8px; border-radius: 6px; margin-bottom: 6px;
-      animation: statusBlink 0.8s ease-in-out infinite alternate;
+    /* 乗務記録ボタン（カード内） */
+    .btn-rides-popup {
+      background: rgba(59,130,246,.18); color: var(--accent); border: 1px solid rgba(59,130,246,.4);
+      border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700;
+      cursor: pointer; white-space: nowrap; touch-action: manipulation;
     }
-    .vehicle-card.driving .driving-banner { display: block; }
+    .btn-rides-popup:active { opacity: .7; }
+
+    /* 乗務記録ポップアップ */
+    #rides-modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.72);
+      z-index: 2000; backdrop-filter: blur(3px); align-items: flex-end;
+    }
+    #rides-modal-overlay.active { display: flex; }
+    #rides-modal {
+      background: var(--card); border-radius: 18px 18px 0 0;
+      width: 100%; max-height: 88vh; overflow-y: auto; padding: 16px;
+      animation: slideUp .22s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    #rides-modal-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;
+    }
+    #rides-modal-title { font-size: 15px; font-weight: 800; flex: 1; }
+    .btn-modal-close {
+      background: var(--red); color: #fff; border: none; border-radius: 8px;
+      padding: 7px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
 
     /* 配車依頼ボタン */
     .btn-req {
@@ -215,7 +240,10 @@
 </header>
 
 <!-- マップ -->
-<div id="map"></div>
+<div id="map-container">
+  <div id="map"></div>
+  <button id="map-fullscreen-btn" onclick="toggleMapFullscreen()">⛶ 全画面</button>
+</div>
 
 <!-- 出勤中の車両パネル -->
 <div class="vehicle-panels" id="vehicle-panels">
@@ -264,31 +292,33 @@
   </div>
 </div>
 
-<!-- 乗務記録 -->
-<div class="section">
-  <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-    <span>📋 乗務記録</span>
-    <input type="date" id="ride-date-input"
-      style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px">
-  </div>
-  <div class="rides-tabs" id="rides-tabs">
-    <!-- 動的に生成 -->
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>備考</th><th>経路</th></tr>
-      </thead>
-      <tbody id="rides-tbody">
-        <tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="rides-total" id="rides-total" style="display:none">
-    <span>合計：</span><b id="rt-total">¥0</b>
-    &nbsp;|&nbsp;<span>現金：</span><b id="rt-cash" style="color:var(--green)">¥0</b>
-    &nbsp;|&nbsp;<span>カード等：</span><b id="rt-cashless" style="color:#a855f7">¥0</b>
-    &nbsp;|&nbsp;<span>歩合30%：</span><b id="rt-comm" style="color:var(--yellow)">¥0</b>
+<!-- 乗務記録ポップアップモーダル -->
+<div id="rides-modal-overlay">
+  <div id="rides-modal">
+    <div id="rides-modal-header">
+      <div id="rides-modal-title">📋 乗務記録</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="date" id="ride-date-input"
+          style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px">
+        <button class="btn-modal-close" onclick="closeRidesPopup()">✕ 閉じる</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>備考</th><th>経路</th></tr>
+        </thead>
+        <tbody id="rides-modal-tbody">
+          <tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rides-total" id="rides-modal-total" style="display:none">
+      <span>合計：</span><b id="rmt-total">¥0</b>
+      &nbsp;|&nbsp;<span>現金：</span><b id="rmt-cash" style="color:var(--green)">¥0</b>
+      &nbsp;|&nbsp;<span>カード等：</span><b id="rmt-cashless" style="color:#a855f7">¥0</b>
+      &nbsp;|&nbsp;<span>歩合30%：</span><b id="rmt-comm" style="color:var(--yellow)">¥0</b>
+    </div>
   </div>
 </div>
 
@@ -392,7 +422,7 @@ function makeMarkerIcon(carId, status) {
   const def = CAR_DEFS[carId];
   const color = def ? def.color : '#888';
   const isDriving = status === 'driving';
-  const label = isDriving ? '🚗走行中' : status === 'departing' ? '📍出発' : '⏸待機';
+  const label = isDriving ? '🚗配車中' : status === 'departing' ? '🚗配車中' : '⏸待機';
   const glow = isDriving ? `box-shadow:0 0 0 6px ${color}44;` : '';
   return L.divIcon({
     className: '',
@@ -433,7 +463,7 @@ async function fetchActiveShifts() {
 function initRideDateInput() {
   const input = document.getElementById('ride-date-input');
   input.value = todayISO;
-  // 日付変更時はタブをリセット
+  // 日付変更時に乗務記録を再取得してポップアップを更新
   input.addEventListener('change', () => fetchRidesForDate(input.value, false));
   fetchRidesForDate(todayISO, false);
 }
@@ -487,21 +517,28 @@ function renderVehiclePanels() {
       div.className = 'vehicle-card';
       div.id = 'card-' + carId;
       div.innerHTML = `
-        <div class="driving-banner">🚗 走行中！</div>
         <div class="vc-header">
-          <div class="vc-name" style="color:${def.color}">${def.name}（${def.plate}）</div>
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+            <div class="vc-name" style="color:${def.color}">${def.name}</div>
+            <button class="btn-rides-popup" onclick="openRidesPopup('${carId}')">📋 乗務記録</button>
+          </div>
           <div class="vc-status st-waiting" id="status-${carId}">待機中</div>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
-          ${shift.driver1_name||''}／${shift.driver2_name||''}
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+          👤 ${shift.driver1_name||'—'}　／　${shift.driver2_name||'—'}
           ${shift.date !== todayISO ? `<span style="color:var(--yellow);margin-left:6px">📅 ${shift.date}</span>` : ''}
-          ${shift.status === 'ended' ? `<span style="color:var(--red);margin-left:6px">終業済</span>` : ''}
         </div>
-        <div class="vc-metrics">
-          <div class="vc-metric"><div class="val" id="dist-${carId}">—</div><div class="lbl">km</div></div>
-          <div class="vc-metric"><div class="val" id="fare-${carId}">—</div><div class="lbl">円</div></div>
+        <!-- 配車中のみ表示 -->
+        <div id="driving-info-${carId}" style="display:none">
+          <div class="vc-info" id="info-${carId}">お客様：<span>—</span><br>目的地：<span>—</span></div>
         </div>
-        <div class="vc-info" id="info-${carId}">お客様：—<br>目的地：—</div>
+        <!-- 待機中（到着後）のみ表示 -->
+        <div id="waiting-info-${carId}" style="display:none">
+          <div class="vc-metrics">
+            <div class="vc-metric"><div class="val" id="dist-${carId}">—</div><div class="lbl">km</div></div>
+            <div class="vc-metric"><div class="val" id="fare-${carId}">—</div><div class="lbl">円</div></div>
+          </div>
+        </div>
         <div class="updated" id="updated-${carId}"></div>
         <button class="btn-req" onclick="openReqFormFor('${carId}')">📨 配車依頼</button>
       `;
@@ -544,30 +581,50 @@ async function fetchVehicles() {
 
 function updateVehicleCard(carId, data) {
   const status = data.status || 'waiting';
-  const dist   = data.distance != null ? parseFloat(data.distance).toFixed(2) : '—';
-  const fare   = data.fare     != null ? parseInt(data.fare).toLocaleString()  : '—';
   const updAt  = data.updated_at
     ? new Date(data.updated_at).toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit',second:'2-digit'})
     : '';
 
-  const stMap = { waiting: ['待機中','st-waiting'], departing: ['出発','st-departing'], driving: ['走行中','st-driving'] };
-  const [stLabel, stClass] = stMap[status] || ['不明','st-waiting'];
+  // ステータス表示：待機中 / 配車中（departing or driving）
+  const isDispatched = (status === 'driving' || status === 'departing');
+  const stLabel = isDispatched ? '配車中' : '待機中';
+  const stClass = isDispatched
+    ? (status === 'driving' ? 'st-driving' : 'st-dispatched')
+    : 'st-waiting';
 
-  const statusEl  = document.getElementById('status-' + carId);
-  const distEl    = document.getElementById('dist-'   + carId);
-  const fareEl    = document.getElementById('fare-'   + carId);
-  const infoEl    = document.getElementById('info-'   + carId);
-  const updatedEl = document.getElementById('updated-'+ carId);
-  const card      = document.getElementById('card-'   + carId);
+  const statusEl      = document.getElementById('status-'       + carId);
+  const infoEl        = document.getElementById('info-'         + carId);
+  const drivingInfoEl = document.getElementById('driving-info-' + carId);
+  const waitingInfoEl = document.getElementById('waiting-info-' + carId);
+  const distEl        = document.getElementById('dist-'         + carId);
+  const fareEl        = document.getElementById('fare-'         + carId);
+  const updatedEl     = document.getElementById('updated-'      + carId);
+  const card          = document.getElementById('card-'         + carId);
 
   if (!statusEl || !card) return;
 
-  statusEl.textContent  = stLabel;
-  statusEl.className    = 'vc-status ' + stClass;
-  distEl.textContent    = dist;
-  fareEl.textContent    = fare;
-  infoEl.innerHTML      = `お客様：<span>${data.customer_name||'—'}</span><br>目的地：<span>${data.destination||'—'}</span>`;
+  statusEl.textContent = stLabel;
+  statusEl.className   = 'vc-status ' + stClass;
   updatedEl.textContent = updAt ? `更新 ${updAt}` : '';
+
+  if (isDispatched) {
+    // 配車中：お客様名・目的地を表示
+    if (infoEl) infoEl.innerHTML = `お客様：<span>${data.customer_name||'—'}</span><br>目的地：<span>${data.destination||'—'}</span>`;
+    if (drivingInfoEl) drivingInfoEl.style.display = '';
+    if (waitingInfoEl) waitingInfoEl.style.display = 'none';
+  } else {
+    // 待機中：お客様名・目的地を非表示、距離・金額を表示（到着後の値）
+    if (drivingInfoEl) drivingInfoEl.style.display = 'none';
+    if (waitingInfoEl) {
+      waitingInfoEl.style.display = '';
+      const dist = data.distance != null && data.distance > 0
+        ? parseFloat(data.distance).toFixed(2) : '—';
+      const fare = data.fare != null && data.fare > 0
+        ? parseInt(data.fare).toLocaleString() : '—';
+      if (distEl) distEl.textContent = dist;
+      if (fareEl) fareEl.textContent = fare;
+    }
+  }
 
   card.classList.remove('driving', 'departing');
   if (status === 'driving')   card.classList.add('driving');
@@ -670,103 +727,122 @@ function renderReqList() {
 // ============================================================
 // 乗務記録
 // ============================================================
+// updateRidesTabs: ridesByCar が更新されたら開いているポップアップを更新
 function updateRidesTabs(preserveTab = false) {
-  const tabsEl = document.getElementById('rides-tabs');
-  tabsEl.innerHTML = '';
-  const ids = Object.keys(ridesByCar);
-
-  if (ids.length === 0) {
-    renderRidesTable([]);
-    activeRideTab = null;
-    return;
+  // ポップアップが開いていればリアルタイム更新
+  if (popupCarId) {
+    renderRidesModalTable(ridesByCar[popupCarId] || []);
   }
-
-  // 現在のタブが引き続き存在すれば維持、なければ最初のタブへ
-  const targetTab = (preserveTab && activeRideTab && ridesByCar[activeRideTab])
-    ? activeRideTab
-    : ids[0];
-
-  ids.forEach(carId => {
-    const def = CAR_DEFS[carId] || {};
-    const cnt = (ridesByCar[carId] || []).length;
-    const tab = document.createElement('div');
-    tab.className = 'rides-tab' + (carId === targetTab ? ' active' : '');
-    tab.dataset.car = carId;
-    tab.textContent = `🚗 ${def.name}（${cnt}件）`;
-    tab.addEventListener('click', function() {
-      document.querySelectorAll('.rides-tab').forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      activeRideTab = this.dataset.car;
-      renderRidesTable(ridesByCar[activeRideTab] || []);
-    });
-    tabsEl.appendChild(tab);
-  });
-
-  activeRideTab = targetTab;
-  renderRidesTable(ridesByCar[activeRideTab] || []);
 }
 
+// 乗務記録の行HTML生成（再利用）
+function buildRideRow(r, i) {
+  const fare     = r.fare || 0;
+  const payClass = r.payment_type === 'cash' ? 'pay-cash' : 'pay-cashless';
+  const payLabel = r.payment_type === 'cash' ? '現金' : 'カード等';
+  const dist     = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
+  const dur      = r.duration_min > 0 ? r.duration_min+'分' : '—';
+  const custCell = r.customer_name
+    ? `<span style="font-size:11px;max-width:60px;display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:middle">${r.customer_name}</span>`
+    : '—';
+  const depUrl = r.departure_lat
+    ? `https://maps.google.com/?q=${r.departure_lat},${r.departure_lng}`
+    : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
+  const depCell = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
+  const destLabel = r.arrival_place || r.destination || '—';
+  const destUrl = r.arrival_lat
+    ? `https://maps.google.com/?q=${r.arrival_lat},${r.arrival_lng}`
+    : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||''))}`;
+  const destCell = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+  const notesCell = r.notes
+    ? `<span style="cursor:pointer;font-size:16px" title="${r.notes.replace(/"/g,'&quot;')}"
+           onclick="alert('【備考】\\n${r.notes.replace(/'/g,"\\'").replace(/\n/g,'\\n')}')">📝</span>`
+    : '—';
+  const routeUrl = (r.departure_lat && r.arrival_lat)
+    ? `https://maps.google.com/maps/dir/${r.departure_lat},${r.departure_lng}/${r.arrival_lat},${r.arrival_lng}`
+    : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrival_place||r.destination||'')}`;
+  const hasRoute = r.arrival_lat || r.destination || r.arrival_place;
+  return `<tr>
+    <td>${i+1}</td>
+    <td style="max-width:60px">${custCell}</td>
+    <td>${r.departure_time||'—'}</td>
+    <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${depCell}</td>
+    <td>${r.arrival_time||'—'}</td>
+    <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${destCell}</td>
+    <td>${dur}</td><td>${dist}</td>
+    <td style="font-weight:700">¥${fare.toLocaleString()}</td>
+    <td class="${payClass}">${payLabel}</td>
+    <td>${notesCell}</td>
+    <td>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
+  </tr>`;
+}
 
-function renderRidesTable(rides) {
-  const tbody   = document.getElementById('rides-tbody');
-  const totalEl = document.getElementById('rides-total');
+function renderRidesModalTable(rides) {
+  const tbody   = document.getElementById('rides-modal-tbody');
+  const totalEl = document.getElementById('rides-modal-total');
   if (!rides || rides.length === 0) {
     tbody.innerHTML = '<tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
-    totalEl.style.display = 'none';
+    if (totalEl) totalEl.style.display = 'none';
     return;
   }
   let total = 0, cash = 0, cashless = 0;
   tbody.innerHTML = rides.map((r, i) => {
     const fare = r.fare || 0;
-    total += fare; if (r.payment_type === 'cash') cash += fare; else cashless += fare;
-    const payClass = r.payment_type === 'cash' ? 'pay-cash' : 'pay-cashless';
-    const payLabel = r.payment_type === 'cash' ? '現金' : 'カード等';
-    const dist = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
-    const dur  = r.duration_min > 0 ? r.duration_min+'分' : '—';
-    // お客様名
-    const custCell = r.customer_name
-      ? `<span style="font-size:11px;max-width:60px;display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:middle">${r.customer_name}</span>`
-      : '—';
-    // 出発地リンク
-    const depUrl = r.departure_lat
-      ? `https://maps.google.com/?q=${r.departure_lat},${r.departure_lng}`
-      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
-    const depCell = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
-    // 到着地リンク
-    const destLabel = r.arrival_place || r.destination || '—';
-    const destUrl = r.arrival_lat
-      ? `https://maps.google.com/?q=${r.arrival_lat},${r.arrival_lng}`
-      : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||''))}`;
-    const destCell = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
-    // 備考（クリックでポップアップ）
-    const notesCell = r.notes
-      ? `<span style="cursor:pointer;font-size:16px" title="${r.notes.replace(/"/g,'&quot;')}"
-             onclick="alert('【備考】\\n${r.notes.replace(/'/g,"\\'").replace(/\n/g,'\\n')}')">📝</span>`
-      : '—';
-    // 経路
-    const routeUrl = (r.departure_lat && r.arrival_lat)
-      ? `https://maps.google.com/maps/dir/${r.departure_lat},${r.departure_lng}/${r.arrival_lat},${r.arrival_lng}`
-      : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrival_place||r.destination||'')}`;
-    const hasRoute = r.arrival_lat || r.destination || r.arrival_place;
-    return `<tr>
-      <td>${i+1}</td>
-      <td style="max-width:60px">${custCell}</td>
-      <td>${r.departure_time||'—'}</td>
-      <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${depCell}</td>
-      <td>${r.arrival_time||'—'}</td>
-      <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${destCell}</td>
-      <td>${dur}</td><td>${dist}</td>
-      <td style="font-weight:700">¥${fare.toLocaleString()}</td>
-      <td class="${payClass}">${payLabel}</td>
-      <td>${notesCell}</td>
-      <td>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
-    </tr>`;
+    total += fare;
+    if (r.payment_type === 'cash') cash += fare; else cashless += fare;
+    return buildRideRow(r, i);
   }).join('');
-  totalEl.style.display = 'flex';
-  document.getElementById('rt-total').textContent    = '¥'+total.toLocaleString();
-  document.getElementById('rt-cash').textContent     = '¥'+cash.toLocaleString();
-  document.getElementById('rt-cashless').textContent = '¥'+cashless.toLocaleString();
-  document.getElementById('rt-comm').textContent     = '¥'+Math.floor(total*0.3).toLocaleString();
+  if (totalEl) {
+    totalEl.style.display = 'flex';
+    document.getElementById('rmt-total').textContent    = '¥'+total.toLocaleString();
+    document.getElementById('rmt-cash').textContent     = '¥'+cash.toLocaleString();
+    document.getElementById('rmt-cashless').textContent = '¥'+cashless.toLocaleString();
+    document.getElementById('rmt-comm').textContent     = '¥'+Math.floor(total*0.3).toLocaleString();
+  }
+}
+
+// ============================================================
+// 乗務記録ポップアップ
+// ============================================================
+let popupCarId = null;
+
+function openRidesPopup(carId) {
+  popupCarId = carId;
+  const def = CAR_DEFS[carId] || {};
+  document.getElementById('rides-modal-title').textContent = `📋 ${def.name} 乗務記録`;
+  renderRidesModalTable(ridesByCar[carId] || []);
+  document.getElementById('rides-modal-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRidesPopup() {
+  document.getElementById('rides-modal-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+  popupCarId = null;
+}
+
+// オーバーレイクリックで閉じる
+document.getElementById('rides-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeRidesPopup();
+});
+
+// ============================================================
+// マップ全画面
+// ============================================================
+function toggleMapFullscreen() {
+  const mapEl = document.getElementById('map');
+  const btn   = document.getElementById('map-fullscreen-btn');
+  if (mapEl.dataset.fs === '1') {
+    mapEl.style.height = '320px';
+    mapEl.dataset.fs   = '0';
+    btn.textContent    = '⛶ 全画面';
+  } else {
+    const hdr = document.querySelector('header');
+    mapEl.style.height = `calc(100vh - ${hdr ? hdr.offsetHeight : 56}px)`;
+    mapEl.dataset.fs   = '1';
+    btn.textContent    = '✕ 縮小';
+  }
+  setTimeout(() => map.invalidateSize(), 320);
 }
 
 // ============================================================
