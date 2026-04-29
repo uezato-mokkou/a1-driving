@@ -448,12 +448,12 @@
       <table>
         <thead>
           <tr>
-            <th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th>
+            <th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>経路</th><th>編集</th>
           </tr>
         </thead>
         <tbody id="ride-tbody">
           <tr id="no-ride-row">
-            <td colspan="11" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
+            <td colspan="12" style="color:var(--muted);padding:24px;font-size:13px">まだ記録がありません</td>
           </tr>
         </tbody>
       </table>
@@ -768,6 +768,39 @@
   </div>
 </div>
 
+<!-- ====================================================
+     乗務記録編集モーダル
+     ==================================================== -->
+<div id="modal-ride-edit" class="modal hidden">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-title">✏️ 乗務記録を編集</div>
+    <div class="input-row" style="margin-bottom:12px">
+      <label>お客様</label>
+      <input type="text" id="re-customer" placeholder="お客様名" autocomplete="off"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:12px">
+      <label>出発地</label>
+      <input type="text" id="re-departure" placeholder="出発地" autocomplete="off"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:12px">
+      <label>目的地</label>
+      <input type="text" id="re-destination" placeholder="目的地" autocomplete="off"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:20px">
+      <label>備考</label>
+      <input type="text" id="re-notes" placeholder="備考" autocomplete="off"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-blue" id="btn-re-save" style="margin:0;flex:1;padding:16px;font-size:16px">💾 保存</button>
+      <button class="btn btn-gray" id="btn-re-cancel" style="margin:0;flex:1;padding:16px;font-size:16px">キャンセル</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // Supabase
@@ -848,8 +881,15 @@ function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem('a1_shift') || 'null');
     if (!s) return false;
-    // 今日または昨日のシフトを復元（夜勤で日付をまたぐケースに対応）
-    if (s.shiftDate === todayISO() || s.shiftDate === yesterdayISO()) {
+    // shiftIdがある場合は3日以内のシフトを復元（夜勤・長時間シフト対応）
+    if (s.shiftId && s.shiftDate) {
+      const shiftD = new Date(s.shiftDate);
+      const diffDays = (Date.now() - shiftD.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays < 3) {
+        state = { ...state, ...s };
+        return true;
+      }
+    } else if (s.shiftDate === todayISO() || s.shiftDate === yesterdayISO()) {
       state = { ...state, ...s };
       return true;
     }
@@ -1079,9 +1119,34 @@ async function syncRidesFromSupabase() {
   if (!data) return;
   const localSeqs = new Set(state.rides.map(r => r.seq));
   let changed = false;
+
+  // 既存ライドにSupabase idを補完（doCompleteRide時にidが未設定の場合）
+  // また、他端末での編集内容（departure/destination/notes/customer）を反映
+  data.forEach(r => {
+    const local = state.rides.find(lr => lr.seq === r.seq_num);
+    if (local) {
+      if (!local.id) { local.id = r.id; changed = true; }
+      // 他端末での編集を反映（編集フラグがない場合のみ上書き）
+      const newDep  = r.departure   || '';
+      const newDest = r.destination || '';
+      const newCust = r.customer_name || '';
+      const newNote = r.notes || '';
+      if (local.departure !== newDep || local.destination !== newDest ||
+          local.customer  !== newCust || local.notes !== newNote) {
+        local.departure   = newDep;
+        local.destination = newDest;
+        local.customer    = newCust;
+        local.notes       = newNote;
+        changed = true;
+      }
+    }
+  });
+
+  // 新規ライドを追加（他端末で記録されたもの）
   data.forEach(r => {
     if (!localSeqs.has(r.seq_num)) {
       state.rides.push({
+        id: r.id,
         seq: r.seq_num, customer: r.customer_name || '',
         departure: r.departure || '', destination: r.destination || '',
         depTime: r.departure_time || '', arrTime: r.arrival_time || '',
@@ -1203,6 +1268,7 @@ function renderRideTable() {
       <td style="font-weight:700">¥${r.fare.toLocaleString()}</td>
       <td class="${payClass}">${payLabel}</td>
       <td>${hasRoute ? `<button onclick="showRouteMap(${i})" style="background:none;border:none;font-size:18px;cursor:pointer;padding:0">🗺</button>` : '—'}</td>
+      <td><button onclick="openRideEdit(${i})" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px" title="編集">✏️</button></td>
     </tr>`;
   }).join('');
 }
@@ -1400,7 +1466,7 @@ async function doCompleteRide() {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+        'Content-Type': 'application/json', 'Prefer': 'return=representation'
       },
       body: JSON.stringify({
         shift_id:      state.shiftId || null,
@@ -1430,6 +1496,15 @@ async function doCompleteRide() {
       const errText = await r.text().catch(() => '');
       console.error('乗務保存エラー', r.status, errText);
       alert(`⚠️ 乗務記録のサーバー保存に失敗しました\nエラー: ${r.status}\n再度ネットワークを確認してください`);
+    } else {
+      // 保存されたレコードのidをstateに記録（編集機能で使用）
+      try {
+        const saved = await r.json();
+        if (saved && saved[0] && saved[0].id) {
+          const rideInState = state.rides.find(lr => lr.seq === ride.seq);
+          if (rideInState) { rideInState.id = saved[0].id; saveState(); }
+        }
+      } catch(e) {}
     }
   } catch(e) {
     console.error('乗務保存ネットワークエラー', e);
@@ -2102,6 +2177,13 @@ document.addEventListener('DOMContentLoaded', function() {
     showScreen('main'); renderMain();
   });
 
+  // ── 乗務記録編集モーダル
+  document.getElementById('btn-re-save').addEventListener('click', saveRideEdit);
+  document.getElementById('btn-re-cancel').addEventListener('click', () => {
+    document.getElementById('modal-ride-edit').classList.add('hidden');
+    editRideIndex = -1;
+  });
+
   // ── 配車依頼
   document.getElementById('btn-req-accept').addEventListener('click', () => respondToRequest('accepted'));
   document.getElementById('btn-req-decline').addEventListener('click', () => respondToRequest('declined'));
@@ -2134,8 +2216,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // ── LocalStorage 復元
     const restored = loadState();
     if (restored && state.screen && state.screen !== 'setup') {
-      showScreen(state.screen);
-      if (state.screen === 'main') renderMain();
+      // 代行中・退勤画面はリロード時にメインへ戻す（操作状態が失われるため）
+      const targetScreen = (state.screen === 'ride' || state.screen === 'endshift') ? 'main' : state.screen;
+      showScreen(targetScreen);
+      if (targetScreen === 'main') renderMain();
       if (state.shiftId) { startRideSync(); startContinuousGps(); }
     } else {
       showScreen('setup');
@@ -2145,6 +2229,55 @@ document.addEventListener('DOMContentLoaded', function() {
   // ── 配車依頼チェック（10秒ごと）
   setInterval(checkForRequests, 10000);
 });
+
+// ============================================================
+// 乗務記録 編集
+// ============================================================
+let editRideIndex = -1;
+
+function openRideEdit(i) {
+  const r = state.rides[i];
+  if (!r) return;
+  editRideIndex = i;
+  document.getElementById('re-customer').value    = r.customer    || '';
+  document.getElementById('re-departure').value   = r.departure   || '';
+  document.getElementById('re-destination').value = r.destination || '';
+  document.getElementById('re-notes').value       = r.notes       || '';
+  document.getElementById('modal-ride-edit').classList.remove('hidden');
+}
+
+async function saveRideEdit() {
+  const i = editRideIndex;
+  if (i < 0 || i >= state.rides.length) return;
+  const r = state.rides[i];
+
+  const customer    = document.getElementById('re-customer').value.trim();
+  const departure   = document.getElementById('re-departure').value.trim();
+  const destination = document.getElementById('re-destination').value.trim();
+  const notes       = document.getElementById('re-notes').value.trim();
+
+  // ローカル更新
+  r.customer    = customer;
+  r.departure   = departure;
+  r.destination = destination;
+  r.notes       = notes;
+  saveState();
+
+  document.getElementById('modal-ride-edit').classList.add('hidden');
+  editRideIndex = -1;
+  renderRideTable();
+
+  // Supabase更新（管理者画面に即反映）
+  const patch = { customer_name: customer, departure, destination, notes };
+  if (r.id) {
+    await sbPatch(`/rest/v1/rides?id=eq.${r.id}`, patch);
+  } else if (state.shiftId) {
+    // idがない場合はshift_id + seq_numで特定
+    await sbPatch(`/rest/v1/rides?shift_id=eq.${state.shiftId}&seq_num=eq.${r.seq}`, patch);
+    // 次回同期時にidを取得できるようにする
+    await syncRidesFromSupabase();
+  }
+}
 
 // ============================================================
 // ルートマップ モーダル
