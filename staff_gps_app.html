@@ -1189,6 +1189,73 @@ async function syncRidesFromSupabase() {
     }
   });
   if (changed) { state.rides.sort((a,b) => a.seq - b.seq); saveState(); }
+
+  // idが未設定のライド（保存失敗分）を自動再送信
+  await retryUnsavedRides();
+}
+
+// ============================================================
+// 未保存ライド 自動再送信
+// ============================================================
+async function retryUnsavedRides() {
+  if (!state.shiftId) return;
+  const unsaved = state.rides.filter(r => !r.id);
+  if (unsaved.length === 0) return;
+
+  let anySuccess = false;
+  for (const ride of unsaved) {
+    // Supabaseに既に存在するか確認（重複投稿防止）
+    const existing = await sbGet(
+      `/rest/v1/rides?shift_id=eq.${state.shiftId}&seq_num=eq.${ride.seq}&select=id`
+    );
+    if (existing && existing[0]) {
+      // 既に保存済み → idだけ記録
+      ride.id = existing[0].id;
+      anySuccess = true;
+      continue;
+    }
+    // 未保存 → 新規POST
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/rides', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json', 'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          shift_id:       state.shiftId,
+          car_id:         CARS[state.car].id,
+          seq_num:        ride.seq,
+          customer_name:  ride.customer,
+          departure:      ride.departure,
+          destination:    ride.destination,
+          departure_time: ride.depTime,
+          arrival_time:   ride.arrTime,
+          duration_min:   ride.durationMin,
+          distance:       ride.distance,
+          fare:           ride.fare,
+          fare_type:      state.fareType || 'general',
+          payment_type:   ride.payment,
+          notes:          ride.notes,
+          arrival_place:  ride.arrivalPlace,
+          arrival_lat:    ride.arrivalLat,
+          arrival_lng:    ride.arrivalLng,
+          departure_lat:  ride.depLat,
+          departure_lng:  ride.depLng,
+          route:          ride.route || null,
+          date:           state.shiftDate || todayISO()
+        })
+      });
+      if (r.ok) {
+        const saved = await r.json().catch(() => null);
+        if (saved && saved[0] && saved[0].id) {
+          ride.id = saved[0].id;
+          anySuccess = true;
+        }
+      }
+    } catch(e) { /* ネットワークエラー時は次回シンク時に再試行 */ }
+  }
+  if (anySuccess) saveState();
 }
 
 // ============================================================
