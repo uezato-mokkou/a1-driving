@@ -235,6 +235,15 @@
     .admin-link:active { opacity: .7; }
     .hidden { display: none !important; }
 
+    /* お迎えマップピッカー */
+    #modal-pickup-map {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.82); z-index: 3000;
+      align-items: flex-end;
+    }
+    #modal-pickup-map.open { display: flex; }
+    #pickup-map-inner { height: 300px; border-radius: 10px; overflow: hidden; }
+
     /* ============================================================
        レスポンシブ（スマホ対応）
        ============================================================ */
@@ -334,7 +343,7 @@
 
 <!-- 送信済み依頼リスト -->
 <div class="section">
-  <div class="section-title">📋 送信済み依頼</div>
+  <div class="section-title">📋 依頼送信済み</div>
   <div id="req-list">
     <div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">まだ依頼はありません</div>
   </div>
@@ -366,6 +375,45 @@
       &nbsp;|&nbsp;<span>現金：</span><b id="rmt-cash" style="color:var(--green)">¥0</b>
       &nbsp;|&nbsp;<span>カード等：</span><b id="rmt-cashless" style="color:#a855f7">¥0</b>
       &nbsp;|&nbsp;<span>歩合30%：</span><b id="rmt-comm" style="color:var(--yellow)">¥0</b>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================
+     お迎え場所 マップピッカーモーダル
+     ==================================================== -->
+<div id="modal-pickup-map">
+  <div style="background:var(--card);border-radius:18px 18px 0 0;width:100%;padding:16px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:15px;font-weight:800">📍 お迎え場所を選択</div>
+      <button onclick="closePickupMapPicker()"
+        style="background:none;border:none;color:var(--text);font-size:26px;cursor:pointer;line-height:1;padding:0">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-align:center">
+      地図をタップ・クリックしてお迎え場所にピンを立ててください
+    </div>
+    <div id="pickup-map-inner"></div>
+    <div id="pickup-map-addr"
+      style="margin:10px 0 4px;font-size:13px;font-weight:600;color:var(--text);
+             text-align:center;min-height:22px;line-height:1.5">
+      —
+    </div>
+    <div id="pickup-map-coords"
+      style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmPickupMap()"
+        style="flex:2;padding:14px;background:var(--accent);color:#fff;border:none;
+               border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;
+               touch-action:manipulation">
+        📍 この場所に決定
+      </button>
+      <button onclick="closePickupMapPicker()"
+        style="flex:1;padding:14px;background:#475569;color:#fff;border:none;
+               border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;
+               touch-action:manipulation">
+        キャンセル
+      </button>
     </div>
   </div>
 </div>
@@ -464,6 +512,18 @@ async function sbPatch(path, body) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(body)
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+async function sbDelete(path) {
+  try {
+    const r = await fetch(SUPABASE_URL + path, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal'
+      }
     });
     return r.ok;
   } catch(e) { return false; }
@@ -799,7 +859,13 @@ function renderReqList() {
     return `<div class="req-item">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <span class="req-car" style="color:${def.color||'var(--text)'}">${def.name||r.car_id}</span>
-        <span class="${stClass}">${stLabel}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="${stClass}">${stLabel}</span>
+          <button onclick="deleteRequest('${r.id}')"
+            style="background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3);
+                   border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;
+                   touch-action:manipulation">🗑 削除</button>
+        </div>
       </div>
       <div class="req-info" style="line-height:1.9">
         ${time ? `<span style="color:var(--muted);font-size:11px">🕐 ${time}</span><br>` : ''}
@@ -810,6 +876,12 @@ function renderReqList() {
       ${r.status === 'accepted' ? `<div style="font-size:11px;color:var(--green);margin-top:6px">✅ 行先：${r.destination||'未設定'}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+async function deleteRequest(id) {
+  if (!confirm('この依頼を削除しますか？')) return;
+  await sbDelete(`/rest/v1/requests?id=eq.${id}`);
+  await fetchRequests();
 }
 
 // ============================================================
@@ -952,6 +1024,79 @@ async function poll() {
 }
 
 // ============================================================
+// お迎え場所 マップピッカー
+// ============================================================
+let pickupMapInstance = null;
+let pickupMarker      = null;
+let pickupPickedLat   = null;
+let pickupPickedLng   = null;
+
+function openPickupMapPicker() {
+  document.getElementById('modal-pickup-map').classList.add('open');
+
+  // Leaflet マップ初期化（初回のみ）
+  if (!pickupMapInstance) {
+    pickupMapInstance = L.map('pickup-map-inner', {
+      center: ISHIGAKI_CENTER, zoom: 14, zoomControl: true
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19
+    }).addTo(pickupMapInstance);
+
+    pickupMapInstance.on('click', async (e) => {
+      pickupPickedLat = e.latlng.lat;
+      pickupPickedLng = e.latlng.lng;
+
+      // マーカー更新
+      if (pickupMarker) pickupMarker.remove();
+      pickupMarker = L.marker([pickupPickedLat, pickupPickedLng]).addTo(pickupMapInstance);
+
+      document.getElementById('pickup-map-addr').textContent   = '住所取得中...';
+      document.getElementById('pickup-map-coords').textContent =
+        `${pickupPickedLat.toFixed(5)}, ${pickupPickedLng.toFixed(5)}`;
+
+      // 逆ジオコーディング
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pickupPickedLat}&lon=${pickupPickedLng}&accept-language=ja`,
+          { headers: { 'User-Agent': 'A1DrivingService/1.0' } }
+        );
+        const d = await res.json();
+        const a = d.address || {};
+        const short = a.neighbourhood || a.suburb || a.city_district
+                   || a.town || a.road || d.display_name?.split(',')[0] || '';
+        document.getElementById('pickup-map-addr').textContent =
+          short || `${pickupPickedLat.toFixed(5)}, ${pickupPickedLng.toFixed(5)}`;
+      } catch(e) {
+        document.getElementById('pickup-map-addr').textContent =
+          `${pickupPickedLat.toFixed(5)}, ${pickupPickedLng.toFixed(5)}`;
+      }
+    });
+  }
+
+  // 既存入力があればそこにマップを合わせる（SPOTS に一致する場合）
+  const curVal = document.getElementById('req-pickup').value.trim();
+  if (curVal && SPOTS[curVal]) {
+    pickupMapInstance.setView([SPOTS[curVal].lat, SPOTS[curVal].lng], 16);
+  }
+
+  setTimeout(() => pickupMapInstance.invalidateSize(), 250);
+}
+
+function confirmPickupMap() {
+  if (pickupPickedLat === null) {
+    alert('地図をタップしてお迎え場所を選んでください'); return;
+  }
+  const addr = document.getElementById('pickup-map-addr').textContent;
+  document.getElementById('req-pickup').value = addr || `${pickupPickedLat.toFixed(5)},${pickupPickedLng.toFixed(5)}`;
+  closePickupMapPicker();
+}
+
+function closePickupMapPicker() {
+  document.getElementById('modal-pickup-map').classList.remove('open');
+}
+
+// ============================================================
 // お迎え場所カスタムドロップダウン
 // ============================================================
 function initPickupDropdown() {
@@ -989,14 +1134,9 @@ function initPickupDropdown() {
   input.addEventListener('input', () => renderList(input.value));
   input.addEventListener('blur',  () => setTimeout(() => list.classList.add('hidden'), 300));
 
-  // マップボタン
+  // マップボタン → ピッカー起動
   document.getElementById('pickup-map-btn').addEventListener('click', () => {
-    const name = input.value.trim();
-    const spot = SPOTS[name];
-    const url = spot
-      ? `https://maps.google.com/?q=${spot.lat},${spot.lng}`
-      : `https://maps.google.com/search/?q=${encodeURIComponent('石垣島 ' + (name||'駐車場'))}`;
-    window.open(url, '_blank');
+    openPickupMapPicker();
   });
 }
 

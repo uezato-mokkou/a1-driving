@@ -435,8 +435,19 @@
      ==================================================== -->
 <div id="screen-main" class="screen">
   <header>
-    <h1 id="main-title">🚗 A1運転代行</h1>
-    <p id="main-sub"></p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="flex:1;min-width:0">
+        <h1 id="main-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🚗 A1運転代行</h1>
+        <p id="main-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
+      </div>
+      <button id="btn-reload"
+        style="background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.4);
+               color:var(--accent);border-radius:8px;padding:7px 12px;font-size:13px;
+               font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;
+               touch-action:manipulation;-webkit-tap-highlight-color:transparent">
+        🔄 更新
+      </button>
+    </div>
   </header>
 
   <!-- スタッフ変更バナー -->
@@ -774,22 +785,42 @@
 <div id="modal-ride-edit" class="modal hidden">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-title">✏️ 乗務記録を編集</div>
-    <div class="input-row" style="margin-bottom:12px">
+    <div class="input-row" style="margin-bottom:10px">
       <label>お客様</label>
       <input type="text" id="re-customer" placeholder="お客様名" autocomplete="off"
              style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
     </div>
-    <div class="input-row" style="margin-bottom:12px">
+    <div class="input-row" style="margin-bottom:10px">
       <label>出発地</label>
       <input type="text" id="re-departure" placeholder="出発地" autocomplete="off"
              style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
     </div>
-    <div class="input-row" style="margin-bottom:12px">
+    <div class="input-row" style="margin-bottom:10px">
       <label>目的地</label>
       <input type="text" id="re-destination" placeholder="目的地" autocomplete="off"
              style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
     </div>
-    <div class="input-row" style="margin-bottom:20px">
+    <div class="input-row" style="margin-bottom:10px">
+      <label>出発時間</label>
+      <input type="time" id="re-deptime"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:10px">
+      <label>到着時間</label>
+      <input type="time" id="re-arrtime"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:10px">
+      <label>距離(km)</label>
+      <input type="number" id="re-distance" placeholder="0.0" step="0.1" min="0" inputmode="decimal"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:10px">
+      <label>金額(¥)</label>
+      <input type="number" id="re-fare" placeholder="0" inputmode="numeric"
+             style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+    </div>
+    <div class="input-row" style="margin-bottom:16px">
       <label>備考</label>
       <input type="text" id="re-notes" placeholder="備考" autocomplete="off"
              style="font-size:16px;flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text)">
@@ -2030,6 +2061,17 @@ document.addEventListener('DOMContentLoaded', function() {
   initDestinationDropdown();
   initCustomerAutocomplete();
 
+  // ── メイン画面 更新ボタン
+  document.getElementById('btn-reload').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-reload');
+    btn.textContent = '⟳ 取得中';
+    btn.disabled = true;
+    await syncRidesFromSupabase();
+    renderMain();
+    btn.textContent = '🔄 更新';
+    btn.disabled = false;
+  });
+
   // ── メイン画面
   document.getElementById('btn-new-ride').addEventListener('click', startNewRide);
   document.getElementById('btn-go-endshift').addEventListener('click', () => {
@@ -2242,6 +2284,10 @@ function openRideEdit(i) {
   document.getElementById('re-customer').value    = r.customer    || '';
   document.getElementById('re-departure').value   = r.departure   || '';
   document.getElementById('re-destination').value = r.destination || '';
+  document.getElementById('re-deptime').value     = r.depTime     || '';
+  document.getElementById('re-arrtime').value     = r.arrTime     || '';
+  document.getElementById('re-distance').value    = r.distance > 0 ? r.distance : '';
+  document.getElementById('re-fare').value        = r.fare > 0    ? r.fare      : '';
   document.getElementById('re-notes').value       = r.notes       || '';
   document.getElementById('modal-ride-edit').classList.remove('hidden');
 }
@@ -2254,27 +2300,46 @@ async function saveRideEdit() {
   const customer    = document.getElementById('re-customer').value.trim();
   const departure   = document.getElementById('re-departure').value.trim();
   const destination = document.getElementById('re-destination').value.trim();
+  const depTime     = document.getElementById('re-deptime').value.trim();
+  const arrTime     = document.getElementById('re-arrtime').value.trim();
+  const distInput   = document.getElementById('re-distance').value;
+  const fareInput   = document.getElementById('re-fare').value;
   const notes       = document.getElementById('re-notes').value.trim();
+
+  const distVal = distInput !== '' ? parseFloat(distInput) : r.distance;
+  const fareVal = fareInput !== '' ? parseInt(fareInput)   : r.fare;
 
   // ローカル更新
   r.customer    = customer;
   r.departure   = departure;
   r.destination = destination;
+  r.depTime     = depTime  || r.depTime;
+  r.arrTime     = arrTime  || r.arrTime;
+  r.distance    = isNaN(distVal) ? r.distance : distVal;
+  r.fare        = isNaN(fareVal) ? r.fare     : fareVal;
   r.notes       = notes;
   saveState();
 
   document.getElementById('modal-ride-edit').classList.add('hidden');
   editRideIndex = -1;
   renderRideTable();
+  renderTotals(); // 金額変更時に合計を再計算
 
   // Supabase更新（管理者画面に即反映）
-  const patch = { customer_name: customer, departure, destination, notes };
+  const patch = {
+    customer_name:  customer,
+    departure,
+    destination,
+    notes,
+    departure_time: r.depTime,
+    arrival_time:   r.arrTime,
+    distance:       r.distance,
+    fare:           r.fare
+  };
   if (r.id) {
     await sbPatch(`/rest/v1/rides?id=eq.${r.id}`, patch);
   } else if (state.shiftId) {
-    // idがない場合はshift_id + seq_numで特定
     await sbPatch(`/rest/v1/rides?shift_id=eq.${state.shiftId}&seq_num=eq.${r.seq}`, patch);
-    // 次回同期時にidを取得できるようにする
     await syncRidesFromSupabase();
   }
 }
