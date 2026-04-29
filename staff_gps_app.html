@@ -940,7 +940,8 @@ function todayJP() {
   return new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
 }
 function nowTime() {
-  return new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  const d = new Date();
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function pad(n) { return String(n).padStart(2,'0'); }
 
@@ -1156,7 +1157,32 @@ async function syncRidesFromSupabase() {
   data.forEach(r => {
     const local = state.rides.find(lr => lr.seq === r.seq_num);
     if (local) {
-      if (!local.id) { local.id = r.id; changed = true; }
+      if (!local.id) {
+        local.id = r.id; changed = true;
+        // Supabaseのレコードが空（保存失敗後に挿入されたプレースホルダ等）の場合、
+        // ローカルの実データでPATCHして補完する
+        if (local.fare > 0 || local.customer || local.departure || local.destination) {
+          sbPatch(`/rest/v1/rides?id=eq.${r.id}`, {
+            customer_name:  local.customer      || null,
+            departure:      local.departure     || null,
+            destination:    local.destination   || null,
+            departure_time: local.depTime       || null,
+            arrival_time:   local.arrTime       || null,
+            duration_min:   local.durationMin   || 0,
+            distance:       local.distance      || 0,
+            fare:           local.fare          || 0,
+            fare_type:      state.fareType      || 'general',
+            payment_type:   local.payment       || 'cash',
+            notes:          local.notes         || null,
+            arrival_place:  local.arrivalPlace  || null,
+            arrival_lat:    local.arrivalLat    || null,
+            arrival_lng:    local.arrivalLng    || null,
+            departure_lat:  local.depLat        || null,
+            departure_lng:  local.depLng        || null,
+            route:          local.route         || null
+          });
+        }
+      }
       // 他端末での編集を反映
       // ★ Supabaseの値が空の場合はローカル値を上書きしない（上書き禁止）
       const sbDep  = r.departure     || '';
@@ -1517,7 +1543,7 @@ async function doArrive() {
 
   state._tmpRide = {
     seq: state.rides.length + 1,
-    depTime: rideStartTime ? rideStartTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '',
+    depTime: rideStartTime ? `${pad(rideStartTime.getHours())}:${pad(rideStartTime.getMinutes())}` : '',
     arrTime: arrStr, durationMin: durMin, distance: rideDist,
     arrivalPlace, arrivalLat, arrivalLng,
     route: rideWaypoints.length >= 2 ? JSON.stringify(rideWaypoints) : null
@@ -2303,7 +2329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const scr = (state.screen === 'ride') ? 'main' : state.screen;
         showScreen(scr);
         if (scr === 'main') renderMain();
-        if (state.shiftId) { startRideSync(); startContinuousGps(); }
+        if (state.shiftId) { startRideSync(); startContinuousGps(); syncRidesFromSupabase(); }
       } else {
         // 有効な保存データなし → Supabaseから取得
         clearState();
