@@ -363,10 +363,10 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>備考</th><th>経路</th></tr>
+          <tr><th>#</th><th>お客様</th><th>出発</th><th>出発地</th><th>到着</th><th>目的地</th><th>時間</th><th>距離</th><th>金額</th><th>支払</th><th>備考</th><th>経路</th><th>操作</th></tr>
         </thead>
         <tbody id="rides-modal-tbody">
-          <tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
+          <tr><td colspan="13" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>
         </tbody>
       </table>
     </div>
@@ -884,6 +884,14 @@ async function deleteRequest(id) {
   await fetchRequests();
 }
 
+async function deleteRide(id) {
+  if (!confirm('この乗務記録を削除しますか？\n（この操作は元に戻せません）')) return;
+  await sbDelete(`/rest/v1/rides?id=eq.${id}`);
+  // 再取得して表示を更新
+  const rideDate = document.getElementById('ride-date-input').value || todayISO;
+  await fetchRidesForDate(rideDate, true);
+}
+
 // ============================================================
 // 乗務記録
 // ============================================================
@@ -934,6 +942,10 @@ function buildRideRow(r, i) {
     <td data-label="支払" class="${payClass}">${payLabel}</td>
     <td data-label="備考"${ec(r.notes?'x':'—')}>${notesCell}</td>
     <td data-label="経路"${ec(hasRoute?'x':'—')}>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
+    <td><button onclick="deleteRide('${r.id}')"
+      style="background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3);
+             border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;
+             touch-action:manipulation;white-space:nowrap">🗑</button></td>
   </tr>`;
 }
 
@@ -941,7 +953,7 @@ function renderRidesModalTable(rides) {
   const tbody   = document.getElementById('rides-modal-tbody');
   const totalEl = document.getElementById('rides-modal-total');
   if (!rides || rides.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
     if (totalEl) totalEl.style.display = 'none';
     return;
   }
