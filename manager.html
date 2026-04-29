@@ -70,10 +70,13 @@
     .vehicle-card.departing { border-color: var(--yellow); }
     .vehicle-card.hidden-card { display: none; }
 
-    .vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .vc-name { font-size: 14px; font-weight: 800; }
+    .vc-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px; gap: 6px;
+    }
+    .vc-name { font-size: 15px; font-weight: 800; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .vc-status {
-      font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 700; white-space: nowrap;
+      font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
     }
     .st-waiting    { background: rgba(148,163,184,.2); color: var(--muted); }
     .st-driving    { background: rgba(34,197,94,.2);   color: var(--green); animation: statusBlink 0.8s ease-in-out infinite alternate; }
@@ -92,11 +95,14 @@
 
     /* 乗務記録ボタン（カード内） */
     .btn-rides-popup {
-      background: rgba(59,130,246,.18); color: var(--accent); border: 1px solid rgba(59,130,246,.4);
-      border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700;
-      cursor: pointer; white-space: nowrap; touch-action: manipulation;
+      display: block; width: 100%;
+      background: rgba(59,130,246,.15); color: var(--accent);
+      border: 1px solid rgba(59,130,246,.35);
+      border-radius: 7px; padding: 6px 10px; font-size: 12px; font-weight: 700;
+      cursor: pointer; touch-action: manipulation; text-align: center;
+      margin-bottom: 8px;
     }
-    .btn-rides-popup:active { opacity: .7; }
+    .btn-rides-popup:active { background: rgba(59,130,246,.3); }
 
     /* 乗務記録ポップアップ */
     #rides-modal-overlay {
@@ -253,48 +259,21 @@
       .req-info { font-size: 12px; line-height: 1.7; }
     }
 
-    /* ============================================================
-       乗務記録テーブル → スマホではカード形式
-       ============================================================ */
-    @media (max-width: 640px) {
-      /* テーブルヘッダーを非表示 */
-      .table-wrap thead { display: none; }
-      /* 各行をカードに */
-      .table-wrap table { width: 100%; }
-      .table-wrap tbody { display: block; }
-      .table-wrap tr {
-        display: block; background: var(--bg); border-radius: 10px;
-        padding: 10px 12px; margin-bottom: 8px;
-        border: 1px solid var(--border);
-      }
-      .table-wrap tr:last-child { margin-bottom: 0; }
-      /* セルを label:value 形式に */
-      .table-wrap td {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 4px 0; border-bottom: 1px solid rgba(51,65,85,.5);
-        font-size: 13px; text-align: right;
-      }
-      .table-wrap td:last-child { border-bottom: none; }
-      .table-wrap td[data-label]::before {
-        content: attr(data-label);
-        font-size: 11px; color: var(--muted); font-weight: 600;
-        flex-shrink: 0; margin-right: 8px; text-align: left;
-      }
-      /* 空（"—"）セルは非表示にして見やすく */
-      .table-wrap td.td-empty { display: none; }
-    }
+    /* 乗務記録テーブル：横スクロール（スマホ対応） */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-wrap table { min-width: 560px; } /* 横スクロール確保 */
 
     /* 乗務記録モーダルヘッダー：スマホで折り返し */
     @media (max-width: 480px) {
-      #rides-modal-header { flex-wrap: wrap; }
-      #rides-modal-title { font-size: 14px; width: 100%; margin-bottom: 6px; }
+      #rides-modal-header { flex-wrap: wrap; gap: 6px; }
+      #rides-modal-title { font-size: 14px; width: 100%; }
       #rides-modal { padding: 14px 12px; }
-      .btn-modal-close { padding: 8px 16px; }
+      .btn-modal-close { padding: 8px 14px; font-size: 12px; }
     }
 
-    /* 乗務記録合計：スマホで改行 */
-    @media (max-width: 400px) {
-      .rides-total { flex-direction: column; gap: 4px; }
+    /* 乗務記録合計：スマホで折り返し */
+    @media (max-width: 420px) {
+      .rides-total { flex-wrap: wrap; gap: 4px; }
     }
   </style>
 </head>
@@ -591,12 +570,10 @@ function renderVehiclePanels() {
       div.id = 'card-' + carId;
       div.innerHTML = `
         <div class="vc-header">
-          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-            <div class="vc-name" style="color:${def.color}">${def.name}</div>
-            <button class="btn-rides-popup" onclick="openRidesPopup('${carId}')">📋 乗務記録</button>
-          </div>
+          <div class="vc-name" style="color:${def.color}">🚗 ${def.name}</div>
           <div class="vc-status st-waiting" id="status-${carId}">待機中</div>
         </div>
+        <button class="btn-rides-popup" onclick="openRidesPopup('${carId}')">📋 乗務記録を見る</button>
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
           👤 ${shift.driver1_name||'—'}　／　${shift.driver2_name||'—'}
           ${shift.date !== todayISO ? `<span style="color:var(--yellow);margin-left:6px">📅 ${shift.date}</span>` : ''}
