@@ -468,26 +468,30 @@ function initRideDateInput() {
   fetchRidesForDate(todayISO, false);
 }
 
-// rides テーブルを直接検索（シフト経由しない）
-// 「今日」は created_at で直近36時間を取得（夜勤シフトの date ズレを回避）
-// 過去日付は date カラムで取得
-// preserveTab=true のとき現在選択中のタブを維持
+// 昨日のISO日付
+function yesterdayISO() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// rides テーブルを直接検索（date フィールドで取得）
+// 今日の場合：今日＋昨日の両方を対象（夜勤シフトの date ズレを回避）
 async function fetchRidesForDate(date, preserveTab = false) {
   if (!date) return;
   let apiPath;
   if (date === todayISO) {
-    // 直近36時間以内に作成されたライドを取得
-    const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
-    apiPath = `/rest/v1/rides?created_at=gte.${since}&order=created_at.asc`;
+    // 今日と昨日（深夜シフト対応）の両方を取得
+    apiPath = `/rest/v1/rides?date=in.(${todayISO},${yesterdayISO()})&order=seq_num.asc`;
   } else {
-    apiPath = `/rest/v1/rides?date=eq.${date}&order=created_at.asc`;
+    apiPath = `/rest/v1/rides?date=eq.${date}&order=seq_num.asc`;
   }
   const data = await sbGet(apiPath);
-  if (!data) return;
+  // 取得失敗時は空配列扱い（既存データは保持しない）
+  const rows = data || [];
 
   // car_id ごとにグループ化
   ridesByCar = {};
-  data.forEach(r => {
+  rows.forEach(r => {
     if (!ridesByCar[r.car_id]) ridesByCar[r.car_id] = [];
     ridesByCar[r.car_id].push(r);
   });
@@ -806,13 +810,17 @@ function renderRidesModalTable(rides) {
 // ============================================================
 let popupCarId = null;
 
-function openRidesPopup(carId) {
+async function openRidesPopup(carId) {
   popupCarId = carId;
   const def = CAR_DEFS[carId] || {};
   document.getElementById('rides-modal-title').textContent = `📋 ${def.name} 乗務記録`;
+  // まずキャッシュで即表示
   renderRidesModalTable(ridesByCar[carId] || []);
   document.getElementById('rides-modal-overlay').classList.add('active');
   document.body.style.overflow = 'hidden';
+  // 開いた直後に最新データを再取得して更新
+  const rideDate = document.getElementById('ride-date-input').value || todayISO;
+  await fetchRidesForDate(rideDate, true);
 }
 
 function closeRidesPopup() {
@@ -854,10 +862,9 @@ async function poll() {
   await fetchActiveShifts();
   await fetchVehicles();
   await fetchRequests();
-  // 選択中の日付が今日の場合：シフト情報ごと再取得（タブ選択は維持）
-  // 過去日付の場合：ポーリングしない（手動更新のみ）
-  const rideDate = document.getElementById('ride-date-input').value;
-  if (rideDate === todayISO) await fetchRidesForDate(todayISO, true);
+  // 乗務記録は選択日付を常にポーリング（ポップアップが開いていればリアルタイム反映）
+  const rideDate = document.getElementById('ride-date-input').value || todayISO;
+  await fetchRidesForDate(rideDate, true);
 }
 
 // ============================================================
