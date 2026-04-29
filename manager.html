@@ -226,7 +226,76 @@
       text-decoration: none; padding: 4px 10px; border: 1px solid var(--border);
       border-radius: 16px;
     }
-    .admin-link:hover { color: var(--text); border-color: var(--text); }
+    .admin-link:active { opacity: .7; }
+    .hidden { display: none !important; }
+
+    /* ============================================================
+       レスポンシブ（スマホ対応）
+       ============================================================ */
+
+    /* 車両パネル：スマホでは1列 */
+    @media (max-width: 520px) {
+      .vehicle-panels { flex-direction: column; gap: 6px; padding: 6px; }
+      .vehicle-card { min-width: unset; width: 100%; }
+
+      /* セクション余白を詰める */
+      .section { margin: 6px 6px; padding: 12px 14px; }
+
+      /* 配車依頼フォームのラベル幅 */
+      .input-row label { width: 72px; font-size: 12px; }
+      .input-row input, .input-row select { font-size: 16px; } /* iOS zoom防止 */
+
+      /* 送信ボタン */
+      .btn-send { padding: 16px; font-size: 16px; }
+
+      /* 送信済み依頼 */
+      .req-item { font-size: 13px; }
+      .req-info { font-size: 12px; line-height: 1.7; }
+    }
+
+    /* ============================================================
+       乗務記録テーブル → スマホではカード形式
+       ============================================================ */
+    @media (max-width: 640px) {
+      /* テーブルヘッダーを非表示 */
+      .table-wrap thead { display: none; }
+      /* 各行をカードに */
+      .table-wrap table { width: 100%; }
+      .table-wrap tbody { display: block; }
+      .table-wrap tr {
+        display: block; background: var(--bg); border-radius: 10px;
+        padding: 10px 12px; margin-bottom: 8px;
+        border: 1px solid var(--border);
+      }
+      .table-wrap tr:last-child { margin-bottom: 0; }
+      /* セルを label:value 形式に */
+      .table-wrap td {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 4px 0; border-bottom: 1px solid rgba(51,65,85,.5);
+        font-size: 13px; text-align: right;
+      }
+      .table-wrap td:last-child { border-bottom: none; }
+      .table-wrap td[data-label]::before {
+        content: attr(data-label);
+        font-size: 11px; color: var(--muted); font-weight: 600;
+        flex-shrink: 0; margin-right: 8px; text-align: left;
+      }
+      /* 空（"—"）セルは非表示にして見やすく */
+      .table-wrap td.td-empty { display: none; }
+    }
+
+    /* 乗務記録モーダルヘッダー：スマホで折り返し */
+    @media (max-width: 480px) {
+      #rides-modal-header { flex-wrap: wrap; }
+      #rides-modal-title { font-size: 14px; width: 100%; margin-bottom: 6px; }
+      #rides-modal { padding: 14px 12px; }
+      .btn-modal-close { padding: 8px 16px; }
+    }
+
+    /* 乗務記録合計：スマホで改行 */
+    @media (max-width: 400px) {
+      .rides-total { flex-direction: column; gap: 4px; }
+    }
   </style>
 </head>
 <body>
@@ -715,15 +784,17 @@ function renderReqList() {
       ? new Date(r.created_at).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})
       : '';
     return `<div class="req-item">
-      <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <span class="req-car" style="color:${def.color||'var(--text)'}">${def.name||r.car_id}</span>
         <span class="${stClass}">${stLabel}</span>
       </div>
-      <div class="req-info">
-        ${time}　お客様：${r.customer_name||'—'}　場所：${r.pickup||'—'}　→　${r.destination||'—'}
-        ${r.note ? '<br>メモ：'+r.note : ''}
+      <div class="req-info" style="line-height:1.9">
+        ${time ? `<span style="color:var(--muted);font-size:11px">🕐 ${time}</span><br>` : ''}
+        👤 <b>${r.customer_name||'—'}</b><br>
+        📍 ${r.pickup||'—'} → ${r.destination||'—'}
+        ${r.note ? `<br>📝 <span style="color:var(--muted)">${r.note}</span>` : ''}
       </div>
-      ${r.status === 'accepted' ? `<div style="font-size:11px;color:var(--green);margin-top:4px">✅ 次の行先：${r.destination||'未設定'}</div>` : ''}
+      ${r.status === 'accepted' ? `<div style="font-size:11px;color:var(--green);margin-top:6px">✅ 行先：${r.destination||'未設定'}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -739,45 +810,45 @@ function updateRidesTabs(preserveTab = false) {
   }
 }
 
-// 乗務記録の行HTML生成（再利用）
+// 乗務記録の行HTML生成（data-label 付き → スマホでカード表示）
 function buildRideRow(r, i) {
-  const fare     = r.fare || 0;
-  const payClass = r.payment_type === 'cash' ? 'pay-cash' : 'pay-cashless';
-  const payLabel = r.payment_type === 'cash' ? '現金' : 'カード等';
-  const dist     = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
-  const dur      = r.duration_min > 0 ? r.duration_min+'分' : '—';
-  const custCell = r.customer_name
-    ? `<span style="font-size:11px;max-width:60px;display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:middle">${r.customer_name}</span>`
-    : '—';
-  const depUrl = r.departure_lat
+  const fare      = r.fare || 0;
+  const payClass  = r.payment_type === 'cash' ? 'pay-cash' : 'pay-cashless';
+  const payLabel  = r.payment_type === 'cash' ? '現金' : 'カード等';
+  const dist      = r.distance > 0 ? parseFloat(r.distance).toFixed(1)+'km' : '—';
+  const dur       = r.duration_min > 0 ? r.duration_min+'分' : '—';
+  const custText  = r.customer_name || '—';
+  const depUrl    = r.departure_lat
     ? `https://maps.google.com/?q=${r.departure_lat},${r.departure_lng}`
     : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.departure||''))}`;
-  const depCell = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
+  const depCell   = r.departure ? `<a href="${depUrl}" target="_blank">${r.departure}</a>` : '—';
   const destLabel = r.arrival_place || r.destination || '—';
-  const destUrl = r.arrival_lat
+  const destUrl   = r.arrival_lat
     ? `https://maps.google.com/?q=${r.arrival_lat},${r.arrival_lng}`
     : `https://maps.google.com/?q=${encodeURIComponent('石垣島 '+(r.destination||''))}`;
-  const destCell = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
+  const destCell  = destLabel !== '—' ? `<a href="${destUrl}" target="_blank">${destLabel}</a>` : '—';
   const notesCell = r.notes
-    ? `<span style="cursor:pointer;font-size:16px" title="${r.notes.replace(/"/g,'&quot;')}"
+    ? `<span style="cursor:pointer;font-size:18px" title="${r.notes.replace(/"/g,'&quot;')}"
            onclick="alert('【備考】\\n${r.notes.replace(/'/g,"\\'").replace(/\n/g,'\\n')}')">📝</span>`
     : '—';
-  const routeUrl = (r.departure_lat && r.arrival_lat)
+  const routeUrl  = (r.departure_lat && r.arrival_lat)
     ? `https://maps.google.com/maps/dir/${r.departure_lat},${r.departure_lng}/${r.arrival_lat},${r.arrival_lng}`
     : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrival_place||r.destination||'')}`;
-  const hasRoute = r.arrival_lat || r.destination || r.arrival_place;
+  const hasRoute  = r.arrival_lat || r.destination || r.arrival_place;
+  const ec = (v) => v === '—' ? ' class="td-empty"' : ''; // 空セルは非表示
   return `<tr>
-    <td>${i+1}</td>
-    <td style="max-width:60px">${custCell}</td>
-    <td>${r.departure_time||'—'}</td>
-    <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${depCell}</td>
-    <td>${r.arrival_time||'—'}</td>
-    <td style="text-align:left;max-width:60px;overflow:hidden;white-space:nowrap">${destCell}</td>
-    <td>${dur}</td><td>${dist}</td>
-    <td style="font-weight:700">¥${fare.toLocaleString()}</td>
-    <td class="${payClass}">${payLabel}</td>
-    <td>${notesCell}</td>
-    <td>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
+    <td data-label="#">${i+1}</td>
+    <td data-label="お客様"${ec(custText)}>${custText}</td>
+    <td data-label="出発時刻">${r.departure_time||'—'}</td>
+    <td data-label="出発地" style="text-align:right"${ec(r.departure?'x':'—')}>${depCell}</td>
+    <td data-label="到着時刻">${r.arrival_time||'—'}</td>
+    <td data-label="目的地" style="text-align:right"${ec(destLabel)}>${destCell}</td>
+    <td data-label="時間"${ec(dur)}>${dur}</td>
+    <td data-label="距離"${ec(dist)}>${dist}</td>
+    <td data-label="金額" style="font-weight:700">¥${fare.toLocaleString()}</td>
+    <td data-label="支払" class="${payClass}">${payLabel}</td>
+    <td data-label="備考"${ec(r.notes?'x':'—')}>${notesCell}</td>
+    <td data-label="経路"${ec(hasRoute?'x':'—')}>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
   </tr>`;
 }
 
