@@ -2,208 +2,196 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 510" width="750" height="510">
 <defs>
   <!-- Apricot Candy Metallic T18 -->
-  <linearGradient id="gSide" x1="0" y1="75" x2="0" y2="365" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="#F2AE84"/>
-    <stop offset="25%"  stop-color="#EA9870"/>
-    <stop offset="70%"  stop-color="#D57848"/>
-    <stop offset="100%" stop-color="#C26030"/>
+  <linearGradient id="gS" x1="0" y1="88" x2="0" y2="368" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="#F2AC82"/>
+    <stop offset="28%"  stop-color="#E8946C"/>
+    <stop offset="72%"  stop-color="#D37540"/>
+    <stop offset="100%" stop-color="#C05E2C"/>
   </linearGradient>
-  <linearGradient id="gFront" x1="612" y1="0" x2="700" y2="0" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="#E49A72"/>
-    <stop offset="100%" stop-color="#BC5A2E"/>
+  <linearGradient id="gF" x1="608" y1="0" x2="705" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="#E09870"/>
+    <stop offset="100%" stop-color="#B85830"/>
   </linearGradient>
-  <linearGradient id="gRoof" x1="85" y1="0" x2="700" y2="0" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="#E0A068"/>
-    <stop offset="100%" stop-color="#CC8048"/>
+  <linearGradient id="gR" x1="82" y1="0" x2="705" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="#DEA068"/>
+    <stop offset="100%" stop-color="#C88048"/>
   </linearGradient>
-  <linearGradient id="gGlass" x1="0" y1="78" x2="0" y2="255" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="#C0DCF2"/>
-    <stop offset="100%" stop-color="#78A8C8"/>
+  <linearGradient id="gG" x1="0" y1="95" x2="0" y2="245" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="#BDD8F0"/>
+    <stop offset="100%" stop-color="#78A8C5"/>
   </linearGradient>
-  <linearGradient id="gGlassF" x1="612" y1="0" x2="700" y2="0" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="#CCE4F8"/>
-    <stop offset="100%" stop-color="#86BAD8"/>
+  <linearGradient id="gWF" x1="610" y1="0" x2="700" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="#CAE2F6"/>
+    <stop offset="100%" stop-color="#84BAD8"/>
   </linearGradient>
-  <linearGradient id="gBump" x1="0" y1="355" x2="0" y2="425" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="#DDA07A"/>
-    <stop offset="100%" stop-color="#AF5030"/>
+  <linearGradient id="gB" x1="0" y1="360" x2="0" y2="428" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="#DCA07A"/>
+    <stop offset="100%" stop-color="#AE5030"/>
   </linearGradient>
-  <radialGradient id="gTire" cx="38%" cy="34%" r="68%">
+  <radialGradient id="gT" cx="38%" cy="34%" r="68%">
     <stop offset="0%"   stop-color="#555"/>
     <stop offset="55%"  stop-color="#222"/>
     <stop offset="100%" stop-color="#111"/>
   </radialGradient>
-  <radialGradient id="gHub" cx="38%" cy="32%" r="65%">
-    <stop offset="0%"   stop-color="#e8e8e8"/>
-    <stop offset="55%"  stop-color="#b8b8b8"/>
+  <radialGradient id="gH" cx="38%" cy="32%" r="65%">
+    <stop offset="0%"   stop-color="#e6e6e6"/>
+    <stop offset="55%"  stop-color="#b5b5b5"/>
     <stop offset="100%" stop-color="#888"/>
   </radialGradient>
-  <linearGradient id="gShine" x1="0" y1="75" x2="0" y2="128" gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="rgba(255,255,255,0.58)"/>
+  <linearGradient id="gSh" x1="0" y1="88" x2="0" y2="135" gradientUnits="userSpaceOnUse">
+    <stop offset="0%"   stop-color="rgba(255,255,255,0.56)"/>
     <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
   </linearGradient>
 </defs>
 
 <!-- Ground shadow -->
-<ellipse cx="370" cy="496" rx="292" ry="13" fill="rgba(0,0,0,0.2)"/>
+<ellipse cx="368" cy="496" rx="285" ry="13" fill="rgba(0,0,0,0.2)"/>
 
-<!-- ── REAR WHEEL (LEFT side = low x) ── -->
-<circle cx="161" cy="420" r="72" fill="#111"/>
-<circle cx="161" cy="420" r="62" fill="url(#gTire)"/>
-<circle cx="161" cy="420" r="44" fill="#181818"/>
-<circle cx="161" cy="420" r="28" fill="url(#gHub)"/>
-<g stroke="#d0d0d0" stroke-width="5">
-  <line x1="161" y1="394" x2="161" y2="446"/>
-  <line x1="135" y1="420" x2="187" y2="420"/>
-  <line x1="143" y1="400" x2="179" y2="440"/>
-  <line x1="179" y1="400" x2="143" y2="440"/>
+<!-- ── REAR WHEEL ── -->
+<circle cx="163" cy="432" r="56" fill="#111"/>
+<circle cx="163" cy="432" r="48" fill="url(#gT)"/>
+<circle cx="163" cy="432" r="34" fill="#181818"/>
+<circle cx="163" cy="432" r="22" fill="url(#gH)"/>
+<g stroke="#d0d0d0" stroke-width="4.5">
+  <line x1="163" y1="411" x2="163" y2="453"/>
+  <line x1="142" y1="432" x2="184" y2="432"/>
+  <line x1="148" y1="416" x2="178" y2="448"/>
+  <line x1="178" y1="416" x2="148" y2="448"/>
 </g>
-<circle cx="161" cy="420" r="8" fill="#ccc"/>
+<circle cx="163" cy="432" r="7" fill="#ccc"/>
 
-<!-- ── FRONT WHEEL (RIGHT side = high x) ── -->
-<circle cx="538" cy="420" r="72" fill="#111"/>
-<circle cx="538" cy="420" r="62" fill="url(#gTire)"/>
-<circle cx="538" cy="420" r="44" fill="#181818"/>
-<circle cx="538" cy="420" r="28" fill="url(#gHub)"/>
-<g stroke="#d0d0d0" stroke-width="5">
-  <line x1="538" y1="394" x2="538" y2="446"/>
-  <line x1="512" y1="420" x2="564" y2="420"/>
-  <line x1="520" y1="400" x2="556" y2="440"/>
-  <line x1="556" y1="400" x2="520" y2="440"/>
+<!-- ── FRONT WHEEL ── -->
+<circle cx="536" cy="432" r="56" fill="#111"/>
+<circle cx="536" cy="432" r="48" fill="url(#gT)"/>
+<circle cx="536" cy="432" r="34" fill="#181818"/>
+<circle cx="536" cy="432" r="22" fill="url(#gH)"/>
+<g stroke="#d0d0d0" stroke-width="4.5">
+  <line x1="536" y1="411" x2="536" y2="453"/>
+  <line x1="515" y1="432" x2="557" y2="432"/>
+  <line x1="521" y1="416" x2="551" y2="448"/>
+  <line x1="551" y1="416" x2="521" y2="448"/>
 </g>
-<circle cx="538" cy="420" r="8" fill="#ccc"/>
+<circle cx="536" cy="432" r="7" fill="#ccc"/>
 
-<!-- ── SIDE BODY with wheel arch cutouts ── -->
-<!-- Car faces RIGHT. Rear=left(x≈85), Front=right(x≈612) -->
-<path d="M85,75 L612,75 L612,365
-  Q538,285 464,365
-  L236,365 Q161,285 85,365 Z"
-  fill="url(#gSide)"/>
+<!-- ── SIDE BODY (with wheel arch cutouts) ── -->
+<path d="M82,88 L608,88 L608,368
+  Q536,300 464,368
+  L234,368 Q163,300 82,368 Z"
+  fill="url(#gS)"/>
 
-<!-- ── FRONT FACE (angled trapezoid, right side) ── -->
-<path d="M612,75 L700,100 L700,390 Q658,375 612,365 Z"
-  fill="url(#gFront)"/>
+<!-- ── FRONT FACE ── -->
+<path d="M608,88 L705,112 L705,392 Q660,378 608,368 Z"
+  fill="url(#gF)"/>
 
 <!-- ── ROOF STRIP ── -->
-<path d="M85,75 L612,75 L700,100 L672,86 Z"
-  fill="url(#gRoof)"/>
+<path d="M82,88 L608,88 L705,112 L676,98 Z"
+  fill="url(#gR)"/>
 
-<!-- ══ WINDOWS on side body ══ -->
-<!-- Window chrome bar -->
-<rect x="85" y="75" width="527" height="7" rx="1" fill="#2a2a2a"/>
+<!-- ══ SIDE WINDOWS (y=93 to y=242: 149px = 53% of body height 280px) ══ -->
+<rect x="82" y="88" width="526" height="6" rx="1" fill="#2a2a2a"/>
 
-<!-- D-PILLAR (rear, left/thick) -->
-<rect x="85"  y="75" width="42"  height="182" fill="#222"/>
+<!-- D-pillar (rear, thick) -->
+<rect x="82"  y="88" width="40"  height="157" fill="#222"/>
 
-<!-- Rear quarter window (leftmost, smallest) -->
-<path d="M129,78 L129,255 L272,255 L272,78 Z" fill="url(#gGlass)"/>
-<path d="M132,81 L141,81 L141,190 L132,190 Z" fill="rgba(255,255,255,0.3)"/>
+<!-- Rear quarter window -->
+<path d="M124,92 L124,242 L264,242 L264,92 Z" fill="url(#gG)"/>
+<path d="M127,95 L136,95 L136,182 L127,182 Z" fill="rgba(255,255,255,0.32)"/>
 
-<!-- C-PILLAR -->
-<rect x="272" y="75" width="16" height="182" fill="#252525"/>
+<!-- C-pillar -->
+<rect x="264" y="88" width="15" height="157" fill="#252525"/>
 
 <!-- Center door window -->
-<path d="M290,78 L290,255 L434,255 L434,78 Z" fill="url(#gGlass)"/>
-<path d="M293,81 L303,81 L303,190 L293,190 Z" fill="rgba(255,255,255,0.35)"/>
+<path d="M281,92 L281,242 L420,242 L420,92 Z" fill="url(#gG)"/>
+<path d="M284,95 L294,95 L294,182 L284,182 Z" fill="rgba(255,255,255,0.36)"/>
 
-<!-- B-PILLAR -->
-<rect x="434" y="75" width="16" height="182" fill="#252525"/>
+<!-- B-pillar -->
+<rect x="420" y="88" width="15" height="157" fill="#252525"/>
 
-<!-- Front door window (large, near A-pillar) -->
-<path d="M452,78 L452,255 L598,255 L598,78 Z" fill="url(#gGlass)"/>
-<path d="M455,81 L468,81 L468,195 L455,195 Z" fill="rgba(255,255,255,0.44)"/>
+<!-- Front door window -->
+<path d="M437,92 L437,242 L594,242 L594,92 Z" fill="url(#gG)"/>
+<path d="M440,95 L453,95 L453,188 L440,188 Z" fill="rgba(255,255,255,0.44)"/>
 
-<!-- A-PILLAR (front, thin) -->
-<rect x="598" y="75" width="14" height="182" fill="#222"/>
+<!-- A-pillar -->
+<rect x="594" y="88" width="14" height="157" fill="#222"/>
 
 <!-- ══ WINDSHIELD on front face ══ -->
-<path d="M616,105 L696,128 L696,260 L616,258 Z"
-  fill="url(#gGlassF)" opacity="0.92"/>
-<path d="M618,108 L630,112 L630,228 L618,225 Z"
+<path d="M612,114 L700,136 L700,256 L612,250 Z"
+  fill="url(#gWF)" opacity="0.92"/>
+<path d="M614,117 L626,120 L626,222 L614,219 Z"
   fill="rgba(255,255,255,0.44)"/>
 
-<!-- ══ LOWER BODY PANEL ══ -->
-<!-- Subtle shading on lower door area -->
-<path d="M129,257 L598,257 L598,365 Q538,285 464,365 L236,365 Q161,285 129,365 Z"
-  fill="rgba(0,0,0,0.06)"/>
+<!-- ══ LOWER BODY - character line ══ -->
+<line x1="124" y1="245" x2="594" y2="245" stroke="#B85828" stroke-width="1.5" opacity="0.6"/>
+<!-- Subtle lower panel shadow -->
+<rect x="124" y="244" width="470" height="3" fill="rgba(0,0,0,0.12)"/>
 
-<!-- Horizontal body line -->
-<line x1="129" y1="258" x2="598" y2="258" stroke="#B85828" stroke-width="1.5" opacity="0.65"/>
-
-<!-- ══ HEADLIGHTS (on front face) ══ -->
-<!-- Near headlight (left/large, wraps onto side body slightly) -->
-<path d="M598,262 L660,268 L660,328 L598,324 Z"
-  fill="#F8F8F4" rx="4"/>
-<path d="M600,265 L657,270 L657,325 L600,321 Z"
-  fill="#D5E8F6"/>
-<!-- Headlight inner lens -->
-<ellipse cx="625" cy="295" rx="12" ry="16" fill="rgba(210,228,252,0.92)"/>
-<ellipse cx="625" cy="295" rx="5.5" ry="7"  fill="rgba(185,212,250,0.95)"/>
+<!-- ══ HEADLIGHTS ══ -->
+<!-- Near headlight (wraps from side face to front face) -->
+<path d="M594,248 L664,254 L664,312 L594,308 Z" fill="#F6F6F2" rx="4"/>
+<path d="M596,251 L661,256 L661,309 L596,305 Z" fill="#D3E7F6"/>
+<ellipse cx="622" cy="280" rx="11" ry="15" fill="rgba(210,228,252,0.9)"/>
+<ellipse cx="622" cy="280" rx="5"  ry="7"  fill="rgba(188,215,252,0.95)"/>
 <!-- Near turn signal -->
-<path d="M598,324 L660,328 L660,344 L598,340 Z" fill="#FFD058"/>
+<path d="M594,308 L664,312 L664,327 L594,323 Z" fill="#FFCE55"/>
 
-<!-- Far headlight (right/small) -->
-<rect x="663" y="274" width="32" height="48" rx="4" fill="#F5F5F2"/>
-<rect x="664" y="276" width="30" height="44" rx="3" fill="#D0E5F5"/>
-<ellipse cx="679" cy="298" rx="6"  ry="8"  fill="rgba(210,228,252,0.9)"/>
+<!-- Far headlight -->
+<rect x="667" y="260" width="30" height="44" rx="4" fill="#F4F4F0"/>
+<rect x="668" y="262" width="28" height="40" rx="3" fill="#D0E4F4"/>
+<ellipse cx="682" cy="282" rx="6"  ry="8"  fill="rgba(210,228,252,0.9)"/>
 <!-- Far turn signal -->
-<rect x="663" y="322" width="32" height="14" rx="3" fill="#FFD058"/>
+<rect x="667" y="304" width="30" height="13" rx="3" fill="#FFCE55"/>
 
-<!-- ══ GRILLE (on front face) ══ -->
-<path d="M600,342 L697,348 L697,368 L600,362 Z" fill="#1a1a1a"/>
-<line x1="602" y1="350" x2="695" y2="355" stroke="#444" stroke-width="1.5"/>
-<line x1="602" y1="355" x2="695" y2="360" stroke="#444" stroke-width="1.5"/>
-<line x1="602" y1="360" x2="695" y2="365" stroke="#444" stroke-width="1.5"/>
-<!-- Daihatsu badge (center of grille) -->
-<ellipse cx="648" cy="355" rx="9"   ry="8"   fill="#666"/>
-<ellipse cx="648" cy="355" rx="5.5" ry="5"   fill="#444"/>
+<!-- ══ GRILLE ══ -->
+<path d="M597,330 L698,336 L698,355 L597,349 Z" fill="#1a1a1a"/>
+<line x1="599" y1="338" x2="696" y2="343" stroke="#444" stroke-width="1.5"/>
+<line x1="599" y1="343" x2="696" y2="348" stroke="#444" stroke-width="1.5"/>
+<line x1="599" y1="348" x2="696" y2="353" stroke="#444" stroke-width="1.5"/>
+<!-- Daihatsu badge -->
+<ellipse cx="648" cy="342" rx="9" ry="8" fill="#666"/>
+<ellipse cx="648" cy="342" rx="5" ry="5" fill="#444"/>
 
 <!-- ══ FRONT BUMPER ══ -->
-<path d="M595,363 L700,368 L700,425 Q660,415 595,418 Z"
-  fill="url(#gBump)"/>
-<!-- Bumper lower black strip -->
-<path d="M597,413 L698,418 L698,430 L597,426 Z" fill="#2a2a2a" opacity="0.9"/>
-<!-- Fog light -->
-<rect x="606" y="385" width="20" height="12" rx="3" fill="#DDE8DF" opacity="0.8"/>
+<path d="M592,356 L705,362 L705,422 Q665,412 592,415 Z" fill="url(#gB)"/>
+<path d="M594,410 L703,415 L703,426 L594,422 Z" fill="#2a2a2a" opacity="0.9"/>
+<!-- Fog light area -->
+<rect x="601" y="376" width="18" height="11" rx="3" fill="#DCE8DC" opacity="0.8"/>
 
-<!-- ══ REAR BUMPER (on side, left edge) ══ -->
-<rect x="85"  y="365" width="22" height="50" rx="3" fill="#C87040"/>
-<rect x="87"  y="400" width="18" height="17" rx="3" fill="#2a2a2a" opacity="0.8"/>
+<!-- ══ REAR BUMPER ══ -->
+<rect x="82"  y="368" width="20" height="46" rx="3" fill="#C67040"/>
+<rect x="84"  y="396" width="16" height="15" rx="3" fill="#2a2a2a" opacity="0.8"/>
 
 <!-- ══ ROCKER SILL ══ -->
-<rect x="129" y="340" width="469" height="14" rx="2" fill="#A84820"/>
-<!-- Rear sill -->
-<path d="M85,365 L129,342 L129,356 L88,378 Z" fill="#984018"/>
+<rect x="124" y="344" width="470" height="13" rx="2" fill="#A84820"/>
+<path d="M82,368 L124,347 L124,360 L85,378 Z" fill="#984018"/>
 
 <!-- ══ WHEEL ARCH TRIM ══ -->
-<path d="M85,365  Q161,285 236,365" fill="none" stroke="#A84820" stroke-width="3.5"/>
-<path d="M464,365 Q538,285 612,365" fill="none" stroke="#A84820" stroke-width="3.5"/>
+<path d="M82,368  Q163,300 234,368" fill="none" stroke="#A84820" stroke-width="3"/>
+<path d="M464,368 Q536,300 608,368" fill="none" stroke="#A84820" stroke-width="3"/>
 
 <!-- ══ DOOR HANDLES ══ -->
-<rect x="350" y="210" width="30" height="8" rx="4" fill="#E0D0C0" stroke="#C8B8A8" stroke-width="0.8"/>
-<rect x="500" y="210" width="30" height="8" rx="4" fill="#E0D0C0" stroke="#C8B8A8" stroke-width="0.8"/>
+<rect x="344" y="205" width="28" height="7" rx="3.5" fill="#DFD0C0" stroke="#C8B8A8" stroke-width="0.8"/>
+<rect x="494" y="205" width="28" height="7" rx="3.5" fill="#DFD0C0" stroke="#C8B8A8" stroke-width="0.8"/>
 
-<!-- ══ SIDE MIRROR (near A-pillar) ══ -->
-<path d="M612,155 L640,150 L645,172 L612,176 Z" fill="#DA8558" stroke="#C06838" stroke-width="1"/>
-<path d="M614,152 L642,156 L642,174 L614,170 Z" fill="#444" opacity="0.85"/>
+<!-- ══ SIDE MIRROR ══ -->
+<path d="M608,150 L636,145 L641,166 L608,170 Z" fill="#D88055" stroke="#BF6835" stroke-width="1"/>
+<path d="M611,148 L638,152 L638,169 L611,165 Z" fill="#444" opacity="0.85"/>
 
-<!-- ══ BODY HIGHLIGHTS (metallic) ══ -->
-<path d="M88,77  L610,77  L610,125 L88,125 Z" fill="url(#gShine)" opacity="0.88"/>
-<rect x="88" y="77" width="522" height="14" rx="1" fill="rgba(255,255,255,0.5)" opacity="0.78"/>
-<!-- Mid subtle -->
-<rect x="88" y="184" width="522" height="16" rx="1" fill="rgba(255,255,255,0.1)"/>
+<!-- ══ BODY HIGHLIGHTS ══ -->
+<path d="M86,90 L606,90 L606,136 L86,136 Z" fill="url(#gSh)" opacity="0.88"/>
+<rect x="86" y="90" width="520" height="13" rx="1" fill="rgba(255,255,255,0.50)" opacity="0.78"/>
+<rect x="86" y="178" width="520" height="15" rx="1" fill="rgba(255,255,255,0.09)"/>
 <!-- Front face highlight -->
-<path d="M615,102 L696,124 L696,152 L615,130 Z" fill="rgba(255,255,255,0.22)"/>
-<!-- Roof highlight -->
-<path d="M88,75 L612,75 L700,100 L672,86 L612,84 L88,84 Z" fill="rgba(255,255,255,0.18)"/>
+<path d="M612,114 L702,136 L702,162 L612,140 Z" fill="rgba(255,255,255,0.22)"/>
+<!-- Roof -->
+<path d="M82,88 L608,88 L705,112 L674,100 L608,97 L82,97 Z" fill="rgba(255,255,255,0.16)"/>
 
-<!-- ══ ROOF TRIM LINE ══ -->
-<line x1="85"  y1="75"  x2="612" y2="75"  stroke="#A04020" stroke-width="2.5"/>
-<line x1="612" y1="75"  x2="700" y2="100" stroke="#A04020" stroke-width="1.5"/>
+<!-- ══ ROOF TRIM ══ -->
+<line x1="82"  y1="88"  x2="608" y2="88"  stroke="#A04020" stroke-width="2.5"/>
+<line x1="608" y1="88"  x2="705" y2="112" stroke="#A04020" stroke-width="1.5"/>
 
-<!-- ══ LICENSE PLATE (front face) ══ -->
-<rect x="626" y="375" width="42" height="26" rx="2" fill="#FFFFD0" stroke="#888" stroke-width="0.8"/>
-<text x="628" y="383" font-size="4.5" fill="#333" font-family="Arial,sans-serif">沖縄581</text>
-<text x="628" y="396" font-size="7"   fill="#111" font-family="Arial,sans-serif" font-weight="bold">よ95-24</text>
+<!-- ══ LICENSE PLATE ══ -->
+<rect x="622" y="370" width="42" height="26" rx="2" fill="#FFFFD0" stroke="#888" stroke-width="0.8"/>
+<text x="624" y="378" font-size="4.5" fill="#333" font-family="Arial,sans-serif">沖縄581</text>
+<text x="624" y="391" font-size="7"   fill="#111" font-family="Arial,sans-serif" font-weight="bold">よ95-24</text>
 
 </svg>
