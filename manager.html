@@ -546,45 +546,19 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const markers = {};
 
-// 車種別SVGアイコン生成（側面シルエット）
+// 車種別アイコン画像マップ
+const CAR_IMAGES = {
+  car_a: 'car_mrwagon.png',
+  car_b: 'car_tanto.png',
+  car_c: 'car_move.png'
+};
+
+// 車アイコン生成（実車PNG画像）
 function getCarSvg(carId, w, h) {
-  if (carId === 'car_b') { // タント - シルバー（背高ボックス型）
-    return `<svg viewBox="0 0 100 55" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="3" width="92" height="41" rx="4" fill="#c8c8c8" stroke="#999" stroke-width="1.5"/>
-      <rect x="4" y="3" width="92" height="9" rx="4" fill="rgba(255,255,255,0.45)"/>
-      <polygon points="21,4 17,38 43,38 43,4" fill="#7aaac0" opacity="0.8"/>
-      <rect x="45" y="4" width="19" height="34" rx="1" fill="#7aaac0" opacity="0.8"/>
-      <polygon points="79,4 81,38 65,38 65,4" fill="#7aaac0" opacity="0.8"/>
-      <line x1="44" y1="4" x2="44" y2="44" stroke="#aaa" stroke-width="0.9"/>
-      <line x1="64" y1="4" x2="64" y2="44" stroke="#aaa" stroke-width="0.9"/>
-      <circle cx="22" cy="47" r="8" fill="#2a2a2a" stroke="#555" stroke-width="1"/>
-      <circle cx="22" cy="47" r="3" fill="#b0b0b0"/>
-      <circle cx="78" cy="47" r="8" fill="#2a2a2a" stroke="#555" stroke-width="1"/>
-      <circle cx="78" cy="47" r="3" fill="#b0b0b0"/>
-      <path d="M10,44 Q10,38 22,38 Q34,38 34,44" fill="#c8c8c8" stroke="#999" stroke-width="1"/>
-      <path d="M66,44 Q66,38 78,38 Q90,38 90,44" fill="#c8c8c8" stroke="#999" stroke-width="1"/>
-    </svg>`;
-  }
-  if (carId === 'car_a') { // MRワゴン - 実車画像
-    return `<img src="car_mrwagon.png" width="${w}" height="${h}"
-      style="object-fit:contain;display:block;" alt="MRワゴン"/>`;
-  }
-  if (carId === 'car_c') { // ムーブ - ホワイト（中高・緩やかな傾斜）
-    return `<svg viewBox="0 0 100 55" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4,44 L4,19 Q6,10 17,8 L25,7 L77,7 L87,10 Q96,15 96,19 L96,44 Z" fill="#f2f2f2" stroke="#bbb" stroke-width="1.5"/>
-      <path d="M17,8 L87,10 Q96,15 96,17 L95,19 Q90,13 78,11 L26,9 Q14,11 6,19 L4,19 L4,14 Q6,10 17,8 Z" fill="rgba(255,255,255,0.65)"/>
-      <path d="M25,8 L21,36 L44,36 L44,8 Z" fill="#88aec8" opacity="0.8"/>
-      <rect x="46" y="8" width="17" height="28" rx="1" fill="#88aec8" opacity="0.8"/>
-      <path d="M77,8 L79,36 L65,36 L65,8 Z" fill="#88aec8" opacity="0.8"/>
-      <line x1="45" y1="8" x2="45" y2="44" stroke="#ccc" stroke-width="0.9"/>
-      <line x1="64" y1="8" x2="64" y2="44" stroke="#ccc" stroke-width="0.9"/>
-      <circle cx="22" cy="47" r="8" fill="#222" stroke="#555" stroke-width="1"/>
-      <circle cx="22" cy="47" r="3" fill="#d0d0d0"/>
-      <circle cx="78" cy="47" r="8" fill="#222" stroke="#555" stroke-width="1"/>
-      <circle cx="78" cy="47" r="3" fill="#d0d0d0"/>
-      <path d="M10,44 Q10,38 22,38 Q34,38 34,44" fill="#f2f2f2" stroke="#bbb" stroke-width="1"/>
-      <path d="M66,44 Q66,38 78,38 Q90,38 90,44" fill="#f2f2f2" stroke="#bbb" stroke-width="1"/>
-    </svg>`;
+  const src = CAR_IMAGES[carId];
+  if (src) {
+    return `<img src="${src}" width="${w}" height="${h}"
+      style="object-fit:contain;display:block;" alt="${CAR_DEFS[carId]?.name || carId}"/>`;
   }
   return `<span style="font-size:20px">🚗</span>`;
 }
@@ -594,17 +568,13 @@ function makeMarkerIcon(carId, status) {
   const color = def ? def.color : '#888';
   const isDriving = status === 'driving' || status === 'departing';
   const label = isDriving ? '配車中' : '待機';
-  const isImg = (carId === 'car_a');
   const shadow = isDriving
     ? `filter:drop-shadow(0 0 6px ${color}) drop-shadow(0 0 3px ${color});`
     : `filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));`;
-  const iconHtml = isImg
-    ? `<img src="car_mrwagon.png" width="66" height="37" style="object-fit:contain;display:block;">`
-    : getCarSvg(carId, 66, 37);
   return L.divIcon({
     className: '',
     html: `<div style="display:flex;flex-direction:column;align-items:center">
-      <div style="${shadow}">${iconHtml}</div>
+      <div style="${shadow}">${getCarSvg(carId, 66, 37)}</div>
       <div style="background:rgba(0,0,0,0.85);color:#fff;font-size:10px;font-weight:700;
         padding:2px 6px;border-radius:4px;margin-top:1px;white-space:nowrap;
         ${isDriving ? `border:1px solid ${color};` : ''}">${def ? def.name : carId}・${label}</div>
