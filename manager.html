@@ -74,7 +74,7 @@
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 4px; gap: 6px;
     }
-    .vc-name { font-size: 15px; font-weight: 800; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vc-name { font-size: 15px; font-weight: 800; flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; overflow: visible; }
     .vc-status {
       font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
     }
@@ -546,22 +546,79 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const markers = {};
 
+// 車種別SVGアイコン生成（側面シルエット）
+function getCarSvg(carId, w, h) {
+  if (carId === 'car_b') { // タント - シルバー（背高ボックス型）
+    return `<svg viewBox="0 0 100 55" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="3" width="92" height="41" rx="4" fill="#c8c8c8" stroke="#999" stroke-width="1.5"/>
+      <rect x="4" y="3" width="92" height="9" rx="4" fill="rgba(255,255,255,0.45)"/>
+      <polygon points="21,4 17,38 43,38 43,4" fill="#7aaac0" opacity="0.8"/>
+      <rect x="45" y="4" width="19" height="34" rx="1" fill="#7aaac0" opacity="0.8"/>
+      <polygon points="79,4 81,38 65,38 65,4" fill="#7aaac0" opacity="0.8"/>
+      <line x1="44" y1="4" x2="44" y2="44" stroke="#aaa" stroke-width="0.9"/>
+      <line x1="64" y1="4" x2="64" y2="44" stroke="#aaa" stroke-width="0.9"/>
+      <circle cx="22" cy="47" r="8" fill="#2a2a2a" stroke="#555" stroke-width="1"/>
+      <circle cx="22" cy="47" r="3" fill="#b0b0b0"/>
+      <circle cx="78" cy="47" r="8" fill="#2a2a2a" stroke="#555" stroke-width="1"/>
+      <circle cx="78" cy="47" r="3" fill="#b0b0b0"/>
+      <path d="M10,44 Q10,38 22,38 Q34,38 34,44" fill="#c8c8c8" stroke="#999" stroke-width="1"/>
+      <path d="M66,44 Q66,38 78,38 Q90,38 90,44" fill="#c8c8c8" stroke="#999" stroke-width="1"/>
+    </svg>`;
+  }
+  if (carId === 'car_a') { // MRワゴン - ブラック（背高・丸みある屋根）
+    return `<svg viewBox="0 0 100 55" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4,44 L4,16 Q4,6 14,5 L22,4 L80,4 L88,6 Q96,10 96,16 L96,44 Z" fill="#1c1c1c" stroke="#444" stroke-width="1.5"/>
+      <path d="M14,5 L88,6 Q96,10 96,14 L95,16 Q90,9 80,8 L22,8 Q12,9 5,16 L4,16 L4,12 Q4,6 14,5 Z" fill="rgba(255,255,255,0.1)"/>
+      <path d="M22,5 L18,37 L43,37 L43,5 Z" fill="#253d5c" opacity="0.9"/>
+      <rect x="45" y="5" width="18" height="32" rx="1" fill="#253d5c" opacity="0.9"/>
+      <path d="M80,5 L82,37 L65,37 L65,5 Z" fill="#253d5c" opacity="0.9"/>
+      <line x1="44" y1="5" x2="44" y2="44" stroke="#333" stroke-width="0.9"/>
+      <line x1="64" y1="5" x2="64" y2="44" stroke="#333" stroke-width="0.9"/>
+      <circle cx="22" cy="47" r="8" fill="#111" stroke="#444" stroke-width="1"/>
+      <circle cx="22" cy="47" r="3" fill="#666"/>
+      <circle cx="78" cy="47" r="8" fill="#111" stroke="#444" stroke-width="1"/>
+      <circle cx="78" cy="47" r="3" fill="#666"/>
+      <path d="M10,44 Q10,38 22,38 Q34,38 34,44" fill="#1c1c1c" stroke="#444" stroke-width="1"/>
+      <path d="M66,44 Q66,38 78,38 Q90,38 90,44" fill="#1c1c1c" stroke="#444" stroke-width="1"/>
+    </svg>`;
+  }
+  if (carId === 'car_c') { // ムーブ - ホワイト（中高・緩やかな傾斜）
+    return `<svg viewBox="0 0 100 55" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4,44 L4,19 Q6,10 17,8 L25,7 L77,7 L87,10 Q96,15 96,19 L96,44 Z" fill="#f2f2f2" stroke="#bbb" stroke-width="1.5"/>
+      <path d="M17,8 L87,10 Q96,15 96,17 L95,19 Q90,13 78,11 L26,9 Q14,11 6,19 L4,19 L4,14 Q6,10 17,8 Z" fill="rgba(255,255,255,0.65)"/>
+      <path d="M25,8 L21,36 L44,36 L44,8 Z" fill="#88aec8" opacity="0.8"/>
+      <rect x="46" y="8" width="17" height="28" rx="1" fill="#88aec8" opacity="0.8"/>
+      <path d="M77,8 L79,36 L65,36 L65,8 Z" fill="#88aec8" opacity="0.8"/>
+      <line x1="45" y1="8" x2="45" y2="44" stroke="#ccc" stroke-width="0.9"/>
+      <line x1="64" y1="8" x2="64" y2="44" stroke="#ccc" stroke-width="0.9"/>
+      <circle cx="22" cy="47" r="8" fill="#222" stroke="#555" stroke-width="1"/>
+      <circle cx="22" cy="47" r="3" fill="#d0d0d0"/>
+      <circle cx="78" cy="47" r="8" fill="#222" stroke="#555" stroke-width="1"/>
+      <circle cx="78" cy="47" r="3" fill="#d0d0d0"/>
+      <path d="M10,44 Q10,38 22,38 Q34,38 34,44" fill="#f2f2f2" stroke="#bbb" stroke-width="1"/>
+      <path d="M66,44 Q66,38 78,38 Q90,38 90,44" fill="#f2f2f2" stroke="#bbb" stroke-width="1"/>
+    </svg>`;
+  }
+  return `<span style="font-size:20px">🚗</span>`;
+}
+
 function makeMarkerIcon(carId, status) {
   const def = CAR_DEFS[carId];
   const color = def ? def.color : '#888';
-  const isDriving = status === 'driving';
-  const label = isDriving ? '🚗配車中' : status === 'departing' ? '🚗配車中' : '⏸待機';
-  const glow = isDriving ? `box-shadow:0 0 0 6px ${color}44;` : '';
+  const isDriving = status === 'driving' || status === 'departing';
+  const label = isDriving ? '配車中' : '待機';
+  const shadow = isDriving
+    ? `filter:drop-shadow(0 0 5px ${color}) drop-shadow(0 0 2px ${color});`
+    : `filter:drop-shadow(0 2px 3px rgba(0,0,0,0.55));`;
   return L.divIcon({
     className: '',
     html: `<div style="display:flex;flex-direction:column;align-items:center">
-      <div style="width:42px;height:42px;border-radius:50%;background:${color};
-        display:flex;align-items:center;justify-content:center;font-size:20px;
-        border:3px solid #fff;${glow}">🚗</div>
-      <div style="background:rgba(0,0,0,0.8);color:#fff;font-size:10px;font-weight:700;
-        padding:2px 6px;border-radius:4px;margin-top:2px;white-space:nowrap">${def ? def.name : carId}・${label}</div>
+      <div style="${shadow}">${getCarSvg(carId, 66, 37)}</div>
+      <div style="background:rgba(0,0,0,0.85);color:#fff;font-size:10px;font-weight:700;
+        padding:2px 6px;border-radius:4px;margin-top:1px;white-space:nowrap;
+        ${isDriving ? `border:1px solid ${color};` : ''}">${def ? def.name : carId}・${label}</div>
     </div>`,
-    iconSize: [70, 60], iconAnchor: [35, 20]
+    iconSize: [80, 60], iconAnchor: [40, 20]
   });
 }
 
@@ -650,7 +707,10 @@ function renderVehiclePanels() {
       div.id = 'card-' + carId;
       div.innerHTML = `
         <div class="vc-header">
-          <div class="vc-name" style="color:${def.color}">🚗 ${def.name}</div>
+          <div class="vc-name" style="display:flex;align-items:center;gap:6px">
+            ${getCarSvg(carId, 72, 40)}
+            <span style="color:${def.color}">${def.name}</span>
+          </div>
           <div class="vc-status st-waiting" id="status-${carId}">待機中</div>
         </div>
         <button class="btn-rides-popup" onclick="openRidesPopup('${carId}')">📋 乗務記録を見る <span id="ride-count-${carId}" style="font-size:12px;font-weight:700;color:var(--accent)"></span></button>
