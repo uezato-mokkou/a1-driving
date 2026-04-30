@@ -599,7 +599,7 @@ function makeMarkerIcon(carId, status) {
     ? `filter:drop-shadow(0 0 6px ${color}) drop-shadow(0 0 3px ${color});`
     : `filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));`;
   const iconHtml = isImg
-    ? `<img src="car_mrwagon.png" width="86" style="object-fit:contain;display:block;">`
+    ? `<img src="car_mrwagon.png" width="66" height="37" style="object-fit:contain;display:block;">`
     : getCarSvg(carId, 66, 37);
   return L.divIcon({
     className: '',
@@ -609,7 +609,7 @@ function makeMarkerIcon(carId, status) {
         padding:2px 6px;border-radius:4px;margin-top:1px;white-space:nowrap;
         ${isDriving ? `border:1px solid ${color};` : ''}">${def ? def.name : carId}・${label}</div>
     </div>`,
-    iconSize: [90, 70], iconAnchor: [45, 25]
+    iconSize: [80, 60], iconAnchor: [40, 20]
   });
 }
 
