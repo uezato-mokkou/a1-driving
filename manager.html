@@ -356,6 +356,18 @@
   </div>
 </div>
 
+<!-- 経路マップモーダル -->
+<div id="route-map-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;display:flex;align-items:center;justify-content:center;display:none">
+  <div style="background:var(--card);border-radius:14px;width:min(95vw,540px);max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div id="route-map-title" style="font-size:14px;font-weight:700">🗺 経路</div>
+      <button onclick="closeRouteMapMgr()" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer">✕ 閉じる</button>
+    </div>
+    <div id="route-map-info" style="font-size:12px;color:var(--muted);padding:8px 16px;border-bottom:1px solid var(--border)"></div>
+    <div id="route-map-container" style="flex:1;height:360px;min-height:260px"></div>
+  </div>
+</div>
+
 <!-- 乗務記録ポップアップモーダル -->
 <div id="rides-modal-overlay">
   <div id="rides-modal">
@@ -965,10 +977,7 @@ function buildRideRow(r, i) {
     ? `<span style="cursor:pointer;font-size:18px" title="${r.notes.replace(/"/g,'&quot;')}"
            onclick="alert('【備考】\\n${r.notes.replace(/'/g,"\\'").replace(/\n/g,'\\n')}')">📝</span>`
     : '—';
-  const routeUrl  = (r.departure_lat && r.arrival_lat)
-    ? `https://maps.google.com/maps/dir/${r.departure_lat},${r.departure_lng}/${r.arrival_lat},${r.arrival_lng}`
-    : `https://maps.google.com/maps/dir/${encodeURIComponent(r.departure||'石垣島')}/${encodeURIComponent(r.arrival_place||r.destination||'')}`;
-  const hasRoute  = r.arrival_lat || r.destination || r.arrival_place;
+  const hasRoute  = r.route || r.arrival_lat || r.destination || r.arrival_place;
   const ec = (v) => v === '—' ? ' class="td-empty"' : ''; // 空セルは非表示
   return `<tr>
     <td data-label="#">${i+1}</td>
@@ -982,7 +991,7 @@ function buildRideRow(r, i) {
     <td data-label="金額" style="font-weight:700">¥${fare.toLocaleString()}</td>
     <td data-label="支払" class="${payClass}">${payLabel}</td>
     <td data-label="備考"${ec(r.notes?'x':'—')}>${notesCell}</td>
-    <td data-label="経路"${ec(hasRoute?'x':'—')}>${hasRoute ? `<a href="${routeUrl}" target="_blank">🗺</a>` : '—'}</td>
+    <td data-label="経路"${ec(hasRoute?'x':'—')}>${hasRoute ? `<button onclick="showRouteMapMgr(${i})" style="background:none;border:none;font-size:18px;cursor:pointer;padding:0" title="経路を表示">🗺</button>` : '—'}</td>
     <td><button onclick="deleteRide('${r.id}')"
       style="background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3);
              border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;
@@ -993,6 +1002,7 @@ function buildRideRow(r, i) {
 function renderRidesModalTable(rides) {
   const tbody   = document.getElementById('rides-modal-tbody');
   const totalEl = document.getElementById('rides-modal-total');
+  currentModalRides = rides || []; // 経路表示用に保存
   if (!rides || rides.length === 0) {
     tbody.innerHTML = '<tr><td colspan="13" style="color:var(--muted);padding:16px;text-align:center">記録なし</td></tr>';
     if (totalEl) totalEl.style.display = 'none';
@@ -1018,6 +1028,7 @@ function renderRidesModalTable(rides) {
 // 乗務記録ポップアップ
 // ============================================================
 let popupCarId = null;
+let currentModalRides = []; // 経路表示用にライドデータを保持
 
 async function openRidesPopup(carId) {
   popupCarId = carId;
@@ -1036,6 +1047,82 @@ function closeRidesPopup() {
   document.getElementById('rides-modal-overlay').classList.remove('active');
   document.body.style.overflow = '';
   popupCarId = null;
+}
+
+// ============================================================
+// 経路マップ表示（乗務記録ポップアップ内）
+// ============================================================
+let routeMapInstance = null;
+
+function showRouteMapMgr(index) {
+  const r = currentModalRides[index];
+  if (!r) return;
+
+  // ウェイポイント取得
+  let waypoints = [];
+  try { if (r.route) waypoints = JSON.parse(r.route); } catch(e) {}
+
+  const overlay = document.getElementById('route-map-overlay');
+  const titleEl = document.getElementById('route-map-title');
+  const infoEl  = document.getElementById('route-map-info');
+
+  // タイトル
+  const dep  = r.departure  || '出発地不明';
+  const dest = r.arrival_place || r.destination || '目的地不明';
+  titleEl.textContent = `🗺 ${dep} → ${dest}`;
+
+  overlay.style.display = 'flex';
+
+  // 既存マップを破棄
+  if (routeMapInstance) { routeMapInstance.remove(); routeMapInstance = null; }
+
+  const ISHIGAKI = [24.3448, 124.1572];
+  routeMapInstance = L.map('route-map-container', { zoomControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(routeMapInstance);
+
+  if (waypoints.length >= 2) {
+    // 走行ルートを青いポリラインで描画
+    const poly = L.polyline(waypoints, { color: '#3b82f6', weight: 5, opacity: 0.85 }).addTo(routeMapInstance);
+    routeMapInstance.fitBounds(poly.getBounds(), { padding: [24, 24] });
+
+    // 出発マーカー（緑）
+    L.circleMarker(waypoints[0], { radius: 9, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 })
+      .bindTooltip('出発', { permanent: true, direction: 'top', offset: [0, -10] })
+      .addTo(routeMapInstance);
+    // 到着マーカー（赤）
+    L.circleMarker(waypoints[waypoints.length - 1], { radius: 9, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 })
+      .bindTooltip('到着', { permanent: true, direction: 'top', offset: [0, -10] })
+      .addTo(routeMapInstance);
+
+    const dist = r.distance > 0 ? parseFloat(r.distance).toFixed(1) + ' km' : '—';
+    const dur  = r.duration_min > 0 ? r.duration_min + ' 分' : '—';
+    infoEl.textContent = `📍 ${waypoints.length} ポイント記録　距離：${dist}　時間：${dur}`;
+  } else if (r.departure_lat && r.arrival_lat) {
+    // ウェイポイントなし → 出発・到着の2点をGPS座標で表示
+    const depPt  = [r.departure_lat,  r.departure_lng];
+    const arrPt  = [r.arrival_lat, r.arrival_lng];
+    const poly = L.polyline([depPt, arrPt], { color: '#f59e0b', weight: 4, opacity: 0.8, dashArray: '8,6' }).addTo(routeMapInstance);
+    routeMapInstance.fitBounds(poly.getBounds(), { padding: [24, 24] });
+    L.circleMarker(depPt, { radius: 9, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 })
+      .bindTooltip('出発', { permanent: true, direction: 'top', offset: [0, -10] })
+      .addTo(routeMapInstance);
+    L.circleMarker(arrPt, { radius: 9, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 })
+      .bindTooltip('到着', { permanent: true, direction: 'top', offset: [0, -10] })
+      .addTo(routeMapInstance);
+    infoEl.textContent = '※ GPS経路データなし（出発・到着地点のみ表示）';
+  } else {
+    // 座標もない → 石垣島中心を表示
+    routeMapInstance.setView(ISHIGAKI, 13);
+    infoEl.textContent = '※ 位置情報が記録されていません';
+  }
+  setTimeout(() => routeMapInstance && routeMapInstance.invalidateSize(), 120);
+}
+
+function closeRouteMapMgr() {
+  document.getElementById('route-map-overlay').style.display = 'none';
+  if (routeMapInstance) { routeMapInstance.remove(); routeMapInstance = null; }
 }
 
 // オーバーレイクリックで閉じる
